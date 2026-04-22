@@ -42,3 +42,7 @@ app-example
 /ios
 /android
 .idea/*
+
+# Claude Code / claude-mem artifacts
+.omc/
+**/CLAUDE.md
