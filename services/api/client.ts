@@ -1,5 +1,6 @@
 import type { ApiInterceptors, ApiRequestConfig, ApiResponse, HttpMethod } from './types'
 import { ApiError, NetworkError, ParseError, TimeoutError } from './errors'
+import { getNetworkStatusSnapshot } from '@/hooks/use-network-status'
 
 const DEFAULT_TIMEOUT_MS = 15_000
 
@@ -42,6 +43,12 @@ export function createApiClient({
   defaultTimeoutMs = DEFAULT_TIMEOUT_MS,
 }: ApiClientOptions): ApiClient {
   async function request<T>(config: ApiRequestConfig): Promise<ApiResponse<T>> {
+    // Offline guard — runs before any user-provided interceptor
+    const snapshot = getNetworkStatusSnapshot()
+    if (snapshot.isConnected === false || snapshot.isInternetReachable === false) {
+      throw new NetworkError('offline')
+    }
+
     // Run onRequest interceptor
     let resolvedConfig = config
     if (interceptors?.onRequest) {
