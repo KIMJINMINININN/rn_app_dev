@@ -1,14 +1,22 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { Linking } from 'react-native';
 import { WebViewMessageEvent } from 'react-native-webview';
 import { HandlerContext } from './types';
 import { systemHandlers } from './handlers/system-handlers';
-
-const allHandlers: Record<string, any> = {
-  ...systemHandlers,
-};
+import { createAuthHandlers } from './handlers/auth-handlers';
+import { createCommonHandlers } from './handlers/common-handlers';
 
 export function useWebviewMessage(ctx: HandlerContext) {
+  // Compose dispatch table: common → auth → system (system wins on key conflict)
+  const allHandlers = useMemo(
+    () => ({
+      ...createCommonHandlers(ctx),
+      ...createAuthHandlers(ctx),
+      ...systemHandlers, // raw object — keys are legacy strings like 'App Launch'
+    }),
+    [ctx],
+  );
+
   const onMessage = useCallback(
     async (e: WebViewMessageEvent) => {
       const rawData = e.nativeEvent.data;
@@ -38,7 +46,7 @@ export function useWebviewMessage(ctx: HandlerContext) {
         await Linking.openURL(link);
       }
     },
-    [ctx],
+    [ctx, allHandlers],
   );
 
   return { onMessage };
