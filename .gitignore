@@ -38,10 +38,13 @@ yarn-error.*
 
 app-example
 
-# generated native folders
-/ios
-/android
+# generated native folders (Expo prebuild)
+apps/*/ios
+apps/*/android
 .idea/*
+
+# Turborepo
+.turbo/
 
 # Claude Code / claude-mem artifacts
 .omc/

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import WebView from 'react-native-webview';
 import { BackHandler, Linking, Platform } from 'react-native';
-import { WebviewMessageType } from './types';
+import type { WebviewMessageType } from '@the-others/webview-protocol';
 import { ENV } from '@/config/env';
 
 export interface UseWebviewProps {

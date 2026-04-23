@@ -1,10 +1,9 @@
 import { RefObject } from 'react';
 import WebView from 'react-native-webview';
+import type { WebviewMessageType } from '@the-others/webview-protocol';
 
-export type WebviewMessageType = {
-  mode: string;
-  data?: any;
-};
+// 공통 프로토콜 타입(WebviewMessageType, AuthMessage)은 packages/webview-protocol에서 import.
+// HandlerContext / MessageHandler는 RN 전용이라 여기 남아있음.
 
 export type HandlerContext = {
   sendToWebview: (msg: WebviewMessageType) => void;
@@ -26,9 +25,3 @@ export type MessageHandler = (
   ctx: HandlerContext,
   mode: string,
 ) => Promise<void>;
-
-// Discriminated union for auth message shapes (dispatched via mode field)
-export type AuthMessage =
-  | { mode: 'AUTH_LOGIN'; data: { provider: string; credential: string } }
-  | { mode: 'AUTH_LOGOUT'; data?: undefined }
-  | { mode: 'AUTH_TOKEN_REFRESH'; data: { refreshToken: string } };
