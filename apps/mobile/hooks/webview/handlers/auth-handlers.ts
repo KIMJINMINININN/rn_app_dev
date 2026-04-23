@@ -1,4 +1,5 @@
-import type { MessageHandler, HandlerContext, AuthMessage } from '../types';
+import type { MessageHandler, HandlerContext } from '../types';
+import type { AuthMessage } from '@the-others/webview-protocol';
 
 // Generic auth handlers — SCAFFOLD ONLY.
 // No SDK glue, no token field names beyond the generic AuthMessage shape.

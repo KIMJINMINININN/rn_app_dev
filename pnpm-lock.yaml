@@ -32,6 +32,9 @@ importers:
       '@react-navigation/native':
         specifier: ^7.1.8
         version: 7.2.2(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
+      '@the-others/webview-protocol':
+        specifier: workspace:*
+        version: link:../../packages/webview-protocol
       expo:
         specifier: ^54.0.33
         version: 54.0.33(@babel/core@7.29.0)(@expo/metro-runtime@6.1.2)(expo-router@6.0.23)(react-native-webview@13.15.0(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)(typescript@5.9.3)
@@ -123,6 +126,8 @@ importers:
       typescript:
         specifier: ~5.9.2
         version: 5.9.3
+
+  packages/webview-protocol: {}
 
 packages:
 
