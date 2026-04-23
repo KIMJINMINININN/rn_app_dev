@@ -43,6 +43,9 @@ app-example
 /android
 .idea/*
 
+# Turborepo
+.turbo/
+
 # Claude Code / claude-mem artifacts
 .omc/
 **/CLAUDE.md
