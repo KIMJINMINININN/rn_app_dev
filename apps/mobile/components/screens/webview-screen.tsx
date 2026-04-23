@@ -18,7 +18,7 @@ import { useWebviewMessage } from '@/hooks/webview/use-webview-message';
 export default function WebViewScreen() {
   const navState = useRef<WebViewNavigation | null>(null);
   const exitApp = useRef(false);
-  const timeout = useRef<NodeJS.Timeout | null>(null);
+  const timeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [networkErrorVisible, setNetworkErrorVisible] = useState(false);
 
