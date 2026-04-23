@@ -38,9 +38,9 @@ yarn-error.*
 
 app-example
 
-# generated native folders
-/ios
-/android
+# generated native folders (Expo prebuild)
+apps/*/ios
+apps/*/android
 .idea/*
 
 # Turborepo
