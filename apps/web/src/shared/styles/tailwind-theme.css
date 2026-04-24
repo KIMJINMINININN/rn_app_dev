@@ -1,0 +1,291 @@
+/* ===== Custom Variants ===== */
+@custom-variant pointer-hover {
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      @slot;
+    }
+  }
+}
+
+@theme {
+  /* Reset - Tailwind CSS v4에서 기본적으로 제공하는 테마 변수를 초기화 */
+  --color-*: initial;
+  --font-*: initial;
+  --text-*: initial;
+  --font-weight-*: initial;
+  --radius-*: initial;
+
+  /* Font Family */
+  --font-pretendard: "Pretendard", sans-serif;
+
+  /* Gray */
+  --color-gray-900: #292929;
+  --color-gray-800: #353a3f;
+  --color-gray-700: #575e64;
+  --color-gray-600: #6e757c;
+  --color-gray-500: #8c939a;
+  --color-gray-400: #acb3ba;
+  --color-gray-300: #cfd4d9;
+  --color-gray-200: #dee2e6;
+  --color-gray-100: #ecf0f4;
+  --color-gray-50: #f4f6fa;
+  --color-gray-025: #f7fbff;
+
+  /* Primary */
+  --color-primary-900: #0a2f75;
+  --color-primary-800: #0d3e9b;
+  --color-primary-700: #114dc0;
+  --color-primary-600: #145ce6;
+  --color-primary-500: #3574ed;
+  --color-primary-400: #5b8ef1;
+  --color-primary-300: #80a8f4;
+  --color-primary-200: #b2caf8;
+  --color-primary-100: #cfdefb;
+  --color-primary-50: #e9f1ff;
+
+  /* Red */
+  --color-red-900: #9b0d0d;
+  --color-red-800: #c01111;
+  --color-red-700: #e61414;
+  --color-red-600: #ed3535;
+  --color-red-500: #f15b5b;
+  --color-red-400: #f48080;
+  --color-red-300: #f7a6a6;
+  --color-red-200: #ffcfcf;
+  --color-red-100: #fdecec;
+
+  /* Yellow */
+  --color-yellow-600: #eeab00;
+  --color-yellow-500: #ffcc00;
+  --color-yellow-400: #ffd633;
+  --color-yellow-300: #ffe066;
+  --color-yellow-200: #fff0b3;
+  --color-yellow-100: #fff7d9;
+
+  /* Green */
+  --color-green-600: #009645;
+  --color-green-500: #0cb459;
+  --color-green-400: #31d17b;
+  --color-green-300: #71e6a7;
+  --color-green-200: #b1f2cf;
+  --color-green-100: #e4fbea;
+
+  /* Teal */
+  --color-teal-600: #0f88c8;
+  --color-teal-500: #00afe5;
+  --color-teal-400: #29d1ff;
+  --color-teal-300: #7fe3ff;
+  --color-teal-200: #a9edff;
+  --color-teal-100: #e4f9ff;
+
+  /* Purple */
+  --color-purple-600: #6b3cc9;
+  --color-purple-500: #8556e3;
+  --color-purple-400: #a17df5;
+  --color-purple-300: #bd9ff5;
+  --color-purple-200: #d4c4f5;
+  --color-purple-100: #f5ebff;
+
+  /* Neutral */
+  --color-white: #ffffff;
+  --color-black: #000000;
+  --color-black-30: #0000004d;
+
+  /* Spacing */
+  --spacing: 1px;
+
+  /* Border Radius */
+  --radius-xxs: 6px;
+  --radius-xs: 8px;
+  --radius-s: 10px;
+  --radius-m: 12px;
+  --radius-l: 16px;
+  --radius-xl: 20px;
+  --radius-xxl: 24px;
+}
+
+/* Typography Utilities */
+@utility text-display-l {
+  font-family: Pretendard, sans-serif;
+  font-size: 3.5rem;
+  line-height: 4.25rem;
+  font-weight: 700;
+}
+
+@utility text-display-m {
+  font-family: Pretendard, sans-serif;
+  font-size: 2.5rem;
+  line-height: 3.25rem;
+  font-weight: 700;
+}
+
+@utility text-heading-xxl {
+  font-family: Pretendard, sans-serif;
+  font-size: 2rem;
+  line-height: 2.75rem;
+  font-weight: 700;
+}
+
+@utility text-heading-xl {
+  font-family: Pretendard, sans-serif;
+  font-size: 1.75rem;
+  line-height: 2.5rem;
+  font-weight: 700;
+}
+
+@utility text-heading-l {
+  font-family: Pretendard, sans-serif;
+  font-size: 1.5rem;
+  line-height: 2.125rem;
+  font-weight: 700;
+}
+
+@utility text-heading-m {
+  font-family: Pretendard, sans-serif;
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+  font-weight: 700;
+}
+
+@utility text-heading-s {
+  font-family: Pretendard, sans-serif;
+  font-size: 1.125rem;
+  line-height: 1.625rem;
+  font-weight: 700;
+}
+
+@utility text-heading-xs {
+  font-family: Pretendard, sans-serif;
+  font-size: 1rem;
+  line-height: 1.375rem;
+  font-weight: 700;
+}
+
+@utility text-heading-xxs {
+  font-family: Pretendard, sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 700;
+}
+
+/* Body 500 */
+@utility text-body-xl-500 {
+  font-family: Pretendard, sans-serif;
+  font-size: 1.3125rem;
+  line-height: 2.125rem;
+  font-weight: 500;
+}
+
+@utility text-body-l-500 {
+  font-family: Pretendard, sans-serif;
+  font-size: 1.1875rem;
+  line-height: 1.875rem;
+  font-weight: 500;
+}
+
+@utility text-body-m-500 {
+  font-family: Pretendard, sans-serif;
+  font-size: 1.0625rem;
+  line-height: 1.75rem;
+  font-weight: 500;
+}
+
+@utility text-body-s-500 {
+  font-family: Pretendard, sans-serif;
+  font-size: 0.9375rem;
+  line-height: 1.5rem;
+  font-weight: 500;
+}
+
+@utility text-body-xs-500 {
+  font-family: Pretendard, sans-serif;
+  font-size: 0.8125rem;
+  line-height: 1.25rem;
+  font-weight: 500;
+}
+
+@utility text-body-xxs-500 {
+  font-family: Pretendard, sans-serif;
+  font-size: 0.6875rem;
+  line-height: 1.125rem;
+  font-weight: 500;
+}
+
+/* Body 400 */
+@utility text-body-xl-400 {
+  font-family: Pretendard, sans-serif;
+  font-size: 1.3125rem;
+  line-height: 2.125rem;
+  font-weight: 400;
+}
+
+@utility text-body-l-400 {
+  font-family: Pretendard, sans-serif;
+  font-size: 1.1875rem;
+  line-height: 1.875rem;
+  font-weight: 400;
+}
+
+@utility text-body-m-400 {
+  font-family: Pretendard, sans-serif;
+  font-size: 1.0625rem;
+  line-height: 1.75rem;
+  font-weight: 400;
+}
+
+@utility text-body-s-400 {
+  font-family: Pretendard, sans-serif;
+  font-size: 0.9375rem;
+  line-height: 1.5rem;
+  font-weight: 400;
+}
+
+@utility text-body-xs-400 {
+  font-family: Pretendard, sans-serif;
+  font-size: 0.8125rem;
+  line-height: 1.25rem;
+  font-weight: 400;
+}
+
+@utility text-body-xxs-400 {
+  font-family: Pretendard, sans-serif;
+  font-size: 0.6875rem;
+  line-height: 1.125rem;
+  font-weight: 400;
+}
+
+/* Button Typography */
+@utility text-button-l {
+  font-family: Pretendard, sans-serif;
+  font-size: 1.0625rem;
+  line-height: 1.25rem;
+  font-weight: 500;
+}
+
+@utility text-button-m {
+  font-family: Pretendard, sans-serif;
+  font-size: 0.9375rem;
+  line-height: 1.125rem;
+  font-weight: 500;
+}
+
+@utility text-button-s {
+  font-family: Pretendard, sans-serif;
+  font-size: 0.8125rem;
+  line-height: 1rem;
+  font-weight: 500;
+}
+
+@utility text-button-xs {
+  font-family: Pretendard, sans-serif;
+  font-size: 0.75rem;
+  line-height: 0.875rem;
+  font-weight: 500;
+}
+
+@utility text-button-xxs {
+  font-family: Pretendard, sans-serif;
+  font-size: 0.625rem;
+  line-height: 0.75rem;
+  font-weight: 500;
+}
