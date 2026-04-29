@@ -1,0 +1,18 @@
+title = "the-others gitleaks rules"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Global allowlist for the-others monorepo"
+paths = [
+  '''(^|/)node_modules/''',
+  '''(^|/)pnpm-lock\.yaml$''',
+  '''(^|/)\.git/''',
+  '''(^|/)docs/''',
+  '''(^|/)\.next/''',
+  '''(^|/)dist/''',
+  '''(^|/)build/''',
+  '''(^|/)\.expo/''',
+  '''(^|/)turbo\.json$''',
+]

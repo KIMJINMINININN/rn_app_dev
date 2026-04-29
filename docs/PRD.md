@@ -54,3 +54,4 @@
 - [ ] UI/UX 아키텍처 및 화면 설계서
 - [ ] API 명세 및 외부 연동 구조
 - [ ] DB (Data Schema) 설계서
+- [x] Phase 0a — DB infra + codegen 셋업 (2026-04-30)
