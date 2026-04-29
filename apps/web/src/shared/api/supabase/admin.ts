@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { createClient } from '@supabase/supabase-js';
+import type { Database } from './types';
 
 export function createSupabaseAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -12,7 +13,7 @@ export function createSupabaseAdminClient() {
     );
   }
 
-  return createClient(url, secret, {
+  return createClient<Database>(url, secret, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }
