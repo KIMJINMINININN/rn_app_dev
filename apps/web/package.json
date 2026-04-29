@@ -7,7 +7,13 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "db:start": "supabase start",
+    "db:push": "supabase db push --linked",
+    "db:types": "supabase gen types typescript --linked > src/shared/api/supabase/types.ts",
+    "db:reset": "supabase db reset",
+    "db:diff": "supabase db diff -f",
+    "db:check-drift": "node scripts/check-migration-drift.mjs"
   },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",
