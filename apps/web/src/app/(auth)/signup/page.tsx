@@ -16,26 +16,45 @@ export default async function SignupPage() {
   }
 
   return (
-    <div className="flex flex-1 items-center justify-center bg-zinc-50 px-6 py-16 dark:bg-black">
-      <div className="w-full max-w-sm space-y-6">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
-            가입
-          </h1>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            이메일과 비밀번호로 새 계정을 만듭니다.
+    <div className="flex min-h-screen flex-1 items-center justify-center bg-gray-50 px-16 py-64">
+      {/* Subtle radial gradient behind the card */}
+      <div
+        className="pointer-events-none fixed inset-0 opacity-30"
+        aria-hidden="true"
+        style={{
+          background:
+            'radial-gradient(ellipse 60% 50% at 50% 30%, #b1f2cf 0%, transparent 70%)',
+        }}
+      />
+
+      <div className="relative w-full max-w-[440px]">
+        {/* Card */}
+        <div className="rounded-l border border-gray-200 bg-white px-40 py-48 shadow-xl">
+          {/* Service identifier */}
+          <div className="mb-32 flex flex-col items-center gap-8 text-center">
+            <div className="flex h-56 w-56 items-center justify-center rounded-l bg-green-100" style={{ fontSize: 28 }}>
+              🥬
+            </div>
+            <h1 className="text-heading-l text-gray-900">
+              냉장고 매니저
+            </h1>
+            <p className="text-body-s-400 text-gray-500">
+              새 계정 만들기
+            </p>
+          </div>
+
+          <SignupForm />
+
+          <p className="mt-24 text-center text-body-s-400 text-gray-500">
+            이미 계정이 있나요?{' '}
+            <Link
+              href="/login"
+              className="font-semibold text-green-600 underline-offset-2 hover:underline hover:text-green-700"
+            >
+              로그인
+            </Link>
           </p>
         </div>
-        <SignupForm />
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          이미 계정이 있나요?{' '}
-          <Link
-            href="/login"
-            className="font-medium text-zinc-950 underline dark:text-zinc-50"
-          >
-            로그인
-          </Link>
-        </p>
       </div>
     </div>
   );
