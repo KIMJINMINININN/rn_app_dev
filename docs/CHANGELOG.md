@@ -2,6 +2,42 @@
 
 본 프로젝트의 모든 주요 변경 사항은 phase 단위로 본 파일에 기록한다. 형식: [Keep a Changelog](https://keepachangelog.com/) 약식.
 
+## v0.1.0 (Phase 1) — 인벤토리 CRUD ★ MVP 단위 (2026-04-30)
+
+> Phase 1 (Day 1-7) 통합 마일스톤. 일별 세부 entry는 아래 v0.1.0-day{1..6} 참조.
+
+### Phase 1 종합
+- DB 스키마: 0003-0008b 마이그레이션 7개 (storage_locations + storage_kind enum, ingredient_categories + 글로벌 시드 12, ingredient_master + gin_trgm_ops 인덱스, 글로벌 시드 154 row, user_ingredients + view + RLS, handle_new_user 교체, search_ingredient_masters RPC)
+- `entities/ingredient`: 7 파일 (types/computeDDay/dday-thresholds + UI 3종) + 8 fixture 단위 테스트
+- `features`: add-ingredient (Server Action + Dialog + typeahead, Day 4), list/delete/consume (Day 5)
+- `widgets/inventory-list` (Day 5)
+- `pages/(app)/inventory`: RSC + loading.tsx (Day 5/6)
+- E2E auth-guard 회귀 (Day 6)
+- 디자인 토큰 100% (zinc/dark/rounded-md 0건)
+- conventions §1/§3/§5/§10/§17 모두 준수
+
+### Day 7 회귀 검증
+- typecheck / lint / drift 0 errors
+- vitest 9 PASS (Phase 0b 1 + Phase 1 8)
+- E2E 2 PASS (auth + inventory-happy-path)
+- 토큰 grep 0 forbidden
+
+### MVP 출시 가능성
+가입 → 식재료 추가/조회/삭제/소진 → D-Day 표시까지 동작. ★ 본 phase 단독 출시 가능.
+
+### 사용자 환경 액션 (Phase 1 종료 후 별도 처리)
+1. **0008b RPC 콘솔 적용** — Supabase 콘솔 → SQL Editor에서 `0008b_search_ingredient_masters.sql` 본문 직접 실행 → `pnpm web db:types` 재실행 (Day 4 typeahead 런타임 활성)
+2. **모바일 스모크** (phase-1.md §11) — Vercel preview deploy → apps/mobile/.env.preview 갱신 → eas build → APK sideload → 가입/추가/리스트/로그아웃 시나리오
+3. **§6.2 통합 테스트 (Vitest + supabase local)** — Docker + supabase CLI db:start. Phase 2 또는 별도 작업
+4. **§6.3 E2E happy-path 본문 + RLS A vs B** — 인증 fixture 셋업 후 별도 작업
+5. **(선택) git tag v0.1.0** — Phase 0a/0b 패턴 skip 또는 사용자 결정
+
+### Spec deviations (Phase 1 종합)
+- 0008b 파일명 supabase CLI 거부 → 콘솔 적용 + db:types 재실행 필요 (Day 2)
+- `useTypeahead` RPC 임시 type assertion + TODO (Day 4) — 0008b 콘솔 적용 후 정식 타입
+- §6.2/§6.3 본문 미수행 — 환경 의존 사용자 액션 (Day 6)
+- `consumeIngredient`는 완전 소진 — Phase 2에서 partial consume + auto-consumed 트리거 추가 예정
+
 ## v0.1.0-day6 (Phase 1 Day 6) — inventory loading.tsx + E2E auth-guard 회귀 (2026-04-30)
 
 ### Added
