@@ -1,4 +1,8 @@
 import type { Metadata } from "next";
+
+import { QueryProvider } from "@/shared/lib/query-provider";
+import { Toaster } from "@/shared/ui/toast";
+
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -14,7 +18,8 @@ export default function RootLayout({
   return (
     <html lang="ko" className="h-full antialiased">
       <body className="min-h-full flex flex-col font-pretendard">
-        {children}
+        <QueryProvider>{children}</QueryProvider>
+        <Toaster />
       </body>
     </html>
   );
