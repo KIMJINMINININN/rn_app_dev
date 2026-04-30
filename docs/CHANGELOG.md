@@ -2,6 +2,22 @@
 
 본 프로젝트의 모든 주요 변경 사항은 phase 단위로 본 파일에 기록한다. 형식: [Keep a Changelog](https://keepachangelog.com/) 약식.
 
+## v0.1.1-day2 (Phase 2 Day 2) — 0010 인벤토리 요약 RPC + D-Day 동치성 검증 (2026-04-30)
+
+### Added
+- `0010_dashboard_stats_function.sql` — `get_inventory_summary(p_user uuid)` RPC (returns total / expiring_soon / expired). `consumed=false + quantity > 0` 필터. expiring_soon = `expires_at - current_date BETWEEN 0 AND 2` (URGENT_THRESHOLD_DAYS=2 단일 출처 반영). security invoker. authenticated grant.
+- `entities/ingredient/lib/computeDDay.equivalence.test.ts` — SQL 분류식 ↔ TS `computeDDay` bucket 동치성 6 fixture (D-0/-1/-2/-3 + 만료 -1/-3)
+
+### Changed
+- `apps/web/src/shared/api/supabase/types.ts` 재생성 — `Database['public']['Functions']['get_inventory_summary']` 추가
+
+### Verified
+- `pnpm web db:push` 0010 원격 적용 성공
+- `pnpm web db:types` 갱신 성공
+- `pnpm web db:check-drift` drift 0
+- typecheck / lint 0 errors
+- vitest 15 PASS (Phase 1 9 + Phase 2 동치성 6)
+
 ## v0.1.1-day1 (Phase 2 Day 1) — 0009 부분 소진 트리거 + types 갱신 (2026-04-30)
 
 ### Added

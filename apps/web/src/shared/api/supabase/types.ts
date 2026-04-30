@@ -285,6 +285,14 @@ export type Database = {
       }
     }
     Functions: {
+      get_inventory_summary: {
+        Args: { p_user: string }
+        Returns: {
+          expired: number
+          expiring_soon: number
+          total: number
+        }[]
+      }
       search_ingredient_masters: {
         Args: { p_limit?: number; p_query: string; p_user_id: string }
         Returns: {
