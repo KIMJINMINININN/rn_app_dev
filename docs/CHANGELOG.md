@@ -2,6 +2,27 @@
 
 본 프로젝트의 모든 주요 변경 사항은 phase 단위로 본 파일에 기록한다. 형식: [Keep a Changelog](https://keepachangelog.com/) 약식.
 
+## v0.1.1-day1 (Phase 2 Day 1) — 0009 부분 소진 트리거 + types 갱신 (2026-04-30)
+
+### Added
+- `0009_user_ingredient_partial_consume.sql` — `user_ingredients.original_quantity` 컬럼 추가 (구매 당시 수량 보존, idempotent `add column if not exists` + 기존 row backfill `set original_quantity = quantity`) + `user_ingredients_quantity_nonneg` check constraint (idempotent DO 블록) + `user_ingredients_auto_consume()` 트리거 (BEFORE UPDATE OF quantity — `quantity = 0` 도달 시 `consumed = true` 자동 마킹, security definer search_path 명시)
+
+### Changed
+- `apps/web/src/shared/api/supabase/types.ts` 재생성 (`pnpm web db:types`) — `user_ingredients` Row/Insert/Update에 `original_quantity: number | null` 추가
+
+### Verified
+- `pnpm web db:push` 성공 (0009 원격 적용, 0008b는 console-applied 인식)
+- `pnpm web db:types` 성공
+- `pnpm web db:check-drift` drift 0
+- typecheck / lint 0 errors
+
+### Pending (사용자 환경 액션)
+- 트리거 동작 manual SQL 검증 (insert + `quantity = 0` update → `consumed = true` 자동 확인) — Day 7 회귀 또는 별도 시점
+
+### Architect 결정 적용 (phase-2.md §1.5)
+- 0009 트리거 + Phase 4 `log_cooking_session()` 명시적 update 둘 다 유지 (idempotent double-write OK)
+- `consumed_at` 컬럼 미도입 (plan 어디서도 read 안 함, dead column 회피)
+
 ## v0.1.0 (Phase 1) — 인벤토리 CRUD ★ MVP 단위 (2026-04-30)
 
 > Phase 1 (Day 1-7) 통합 마일스톤. 일별 세부 entry는 아래 v0.1.0-day{1..6} 참조.

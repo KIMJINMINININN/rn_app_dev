@@ -139,6 +139,7 @@ export type Database = {
           id: string
           ingredient_master_id: string
           memo: string | null
+          original_quantity: number | null
           purchased_at: string | null
           quantity: number
           storage_location_id: string
@@ -153,6 +154,7 @@ export type Database = {
           id?: string
           ingredient_master_id: string
           memo?: string | null
+          original_quantity?: number | null
           purchased_at?: string | null
           quantity: number
           storage_location_id: string
@@ -167,6 +169,7 @@ export type Database = {
           id?: string
           ingredient_master_id?: string
           memo?: string | null
+          original_quantity?: number | null
           purchased_at?: string | null
           quantity?: number
           storage_location_id?: string
