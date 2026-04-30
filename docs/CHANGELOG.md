@@ -2,6 +2,21 @@
 
 본 프로젝트의 모든 주요 변경 사항은 phase 단위로 본 파일에 기록한다. 형식: [Keep a Changelog](https://keepachangelog.com/) 약식.
 
+## v0.1.0-day4 (Phase 1 Day 4) — features/add-ingredient (Server Action + Dialog + typeahead) (2026-04-30)
+
+### Added
+- `features/add-ingredient/api/addIngredient.ts` — `'use server'` Action, zod 검증, RLS-respecting INSERT, `Result<UserIngredient, string>` 반환, `revalidatePath('/inventory')`
+- `features/add-ingredient/lib/useTypeahead.ts` — `'use client'` hook, debounce 250ms + TanStack Query (queryKey `['ingredients', 'search', q]`, staleTime 30s) + `search_ingredient_masters` RPC 호출
+- `features/add-ingredient/ui/add-ingredient-dialog.tsx` — `'use client'` 2-step Dialog (검색 → 상세 입력) + invalidate `['ingredients']` on success + Toast 피드백 + 기본 expires_at/storage_kind 자동 채움
+- `zod ^4.x` 의존성 추가 (Server Action 입력 검증)
+
+### Verified
+- typecheck / lint / drift 0 errors
+- vitest 9 PASS (회귀)
+
+### Spec deviations
+- 0008b RPC가 사용자 콘솔 미적용 → `useTypeahead`에서 임시 `(supabase as any).rpc(...)` type assertion + `// TODO: 0008b 콘솔 적용 후 db:types 재실행해서 정식 타입 사용` 주석. 수동 `SearchIngredientMasterResult` 타입 export.
+
 ## v0.1.0-day3 (Phase 1 Day 3) — entities/ingredient (types/computeDDay/UI primitives) + 8 fixture 단위 테스트 (2026-04-30)
 
 ### Added
