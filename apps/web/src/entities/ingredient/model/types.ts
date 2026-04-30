@@ -11,3 +11,7 @@ export type UserIngredientInsert = Tables['user_ingredients']['Insert'];
 export type UserIngredientUpdate = Tables['user_ingredients']['Update'];
 
 export type StorageKind = Database['public']['Enums']['storage_kind'];
+
+export type IngredientWithMaster = UserIngredient & {
+  master: Pick<IngredientMaster, 'name'>;
+};

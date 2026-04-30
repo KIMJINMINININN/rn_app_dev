@@ -2,6 +2,21 @@
 
 본 프로젝트의 모든 주요 변경 사항은 phase 단위로 본 파일에 기록한다. 형식: [Keep a Changelog](https://keepachangelog.com/) 약식.
 
+## v0.1.1-day3 (Phase 2 Day 3) — InventorySummaryHeader + sort + Zustand filter store (2026-04-30)
+
+### Added
+- `entities/ingredient/lib/sort.ts` — 3 정렬 함수 (sortByExpiring / sortByRecent / sortByName) + applySort 디스패처. 한국어 `localeCompare`. expires_at null 마지막 처리.
+- `entities/ingredient/lib/sort.test.ts` — 4 단위 테스트 (3 모드 + 디스패치, 양파/대파/쌀 fixture)
+- `features/inventory-summary/lib/useInventorySummary.ts` — useQuery hook (queryKey `['inventory-summary']`, 30s staleTime, `get_inventory_summary` RPC 호출, InventorySummary 타입 export)
+- `entities/ingredient/ui/inventory-summary-header.tsx` — `'use client'` header (Badge tone default/warning/danger + Skeleton loading)
+- `features/inventory-filter/lib/use-filter-store.ts` — Zustand store (sort + categoryIds + storageId, 인메모리 only — phase-2.md §1.5 결정, no localStorage persist)
+- `features/inventory-filter/ui/sort-toggle.tsx` — 3-option 토글 UI (임박순/최근/이름)
+
+### Verified
+- typecheck / lint / drift 0 errors
+- vitest 19 PASS (Phase 1 9 + Day 2 동치성 6 + Day 3 sort 4)
+- 토큰 grep 0 forbidden
+
 ## v0.1.1-day2 (Phase 2 Day 2) — 0010 인벤토리 요약 RPC + D-Day 동치성 검증 (2026-04-30)
 
 ### Added

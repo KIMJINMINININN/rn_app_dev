@@ -2,22 +2,17 @@
 
 import { useQuery } from '@tanstack/react-query';
 
-import type {
-  IngredientMaster,
-  UserIngredient,
-} from '@/entities/ingredient/model/types';
 import { createSupabaseBrowserClient } from '@/shared/api/supabase/client';
+import type { IngredientWithMaster } from '@/entities/ingredient/model/types';
 
-export type InventoryItem = UserIngredient & {
-  master: Pick<IngredientMaster, 'name'>;
-};
+export type { IngredientWithMaster as InventoryItem } from '@/entities/ingredient/model/types';
 
 export function useInventoryList(userId: string | null | undefined) {
   return useQuery({
     queryKey: ['ingredients', 'list', { userId }],
     enabled: !!userId,
     staleTime: 30 * 1_000,
-    queryFn: async (): Promise<InventoryItem[]> => {
+    queryFn: async (): Promise<IngredientWithMaster[]> => {
       const supabase = createSupabaseBrowserClient();
       const { data, error } = await supabase
         .from('user_ingredients')
@@ -30,7 +25,7 @@ export function useInventoryList(userId: string | null | undefined) {
       return (data ?? []).map((row) => ({
         ...row,
         master: row.ingredient_master ?? { name: '(unknown)' },
-      })) as InventoryItem[];
+      })) as IngredientWithMaster[];
     },
   });
 }
