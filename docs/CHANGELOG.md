@@ -2,6 +2,23 @@
 
 본 프로젝트의 모든 주요 변경 사항은 phase 단위로 본 파일에 기록한다. 형식: [Keep a Changelog](https://keepachangelog.com/) 약식.
 
+## v0.1.0-day5 (Phase 1 Day 5) — list-inventory + delete + consume + widgets/inventory-list + inventory page wire (2026-04-30)
+
+### Added
+- `features/list-inventory/lib/useInventoryList.ts` — useQuery (queryKey `['ingredients','list',{userId}]`) + ingredient_master JOIN + consumed=false filter + expires_at ASC sort + InventoryItem 타입 (master 정규화)
+- `features/delete-ingredient/api/deleteIngredient.ts` — `'use server'` Action, zod 검증, RLS-respecting DELETE
+- `features/consume-ingredient/api/consumeIngredient.ts` — `'use server'` Action, consumed=true UPDATE (Phase 2에서 partial consume 추가 예정)
+- `widgets/inventory-list/ui/inventory-list.tsx` — `'use client'` shell (Skeleton loading + 4 storage 카드 + IngredientRow + 소진/삭제 mutation)
+- `widgets/inventory-list/ui/inventory-actions.tsx` — `'use client'` AddIngredientDialog wrapper
+
+### Changed
+- `app/(app)/inventory/page.tsx` — RSC, storageLocations fetch + InventoryList + InventoryActions 연결 (Day 2 placeholder 대체)
+
+### Verified
+- typecheck/lint/drift 0 errors
+- vitest 9 PASS 회귀
+- 토큰 grep 0 forbidden
+
 ## v0.1.0-day4 (Phase 1 Day 4) — features/add-ingredient (Server Action + Dialog + typeahead) (2026-04-30)
 
 ### Added
