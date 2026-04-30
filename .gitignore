@@ -50,3 +50,11 @@ apps/*/android
 .omc/
 **/CLAUDE.md
 .vercel
+
+# Test artifacts (Phase 0b Day 3)
+coverage/
+playwright-report/
+test-results/
+apps/web/playwright-report/
+apps/web/test-results/
+.vitest-cache/

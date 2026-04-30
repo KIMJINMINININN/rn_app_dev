@@ -1,4 +1,3 @@
-// Primitive button — CVA-driven; all tokens from tailwind-theme.css only
 'use client';
 
 import { cva, type VariantProps } from 'class-variance-authority';
