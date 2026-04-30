@@ -282,6 +282,17 @@ export type Database = {
       }
     }
     Functions: {
+      search_ingredient_masters: {
+        Args: { p_limit?: number; p_query: string; p_user_id: string }
+        Returns: {
+          category_id: string
+          default_shelf_life_days: number
+          default_storage_kind: Database["public"]["Enums"]["storage_kind"]
+          id: string
+          name: string
+          rank: number
+        }[]
+      }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
     }
