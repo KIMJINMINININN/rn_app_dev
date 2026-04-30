@@ -55,3 +55,4 @@
 - [ ] API 명세 및 외부 연동 구조
 - [ ] DB (Data Schema) 설계서
 - [x] Phase 0a — DB infra + codegen 셋업 (2026-04-30)
+- [x] Phase 0b — App Shell + Primitives + 테스트 인프라 (2026-04-30)

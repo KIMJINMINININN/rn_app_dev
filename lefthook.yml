@@ -1,0 +1,8 @@
+pre-commit:
+  parallel: true
+  commands:
+    gitleaks:
+      run: gitleaks protect --staged --no-banner
+    typecheck:
+      glob: "apps/web/src/**/*.{ts,tsx}"
+      run: pnpm web typecheck
