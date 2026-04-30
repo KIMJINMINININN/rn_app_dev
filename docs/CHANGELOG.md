@@ -2,6 +2,19 @@
 
 본 프로젝트의 모든 주요 변경 사항은 phase 단위로 본 파일에 기록한다. 형식: [Keep a Changelog](https://keepachangelog.com/) 약식.
 
+## v0.1.1-day4 (Phase 2 Day 4) — 카테고리/storage 필터 + 카테고리 query (2026-04-30)
+
+### Added
+- `entities/ingredient/lib/filter.ts` — `filterByStorage` / `filterByCategories` / `applyFilters` (categoryByMasterId Map 인자로 N+1 회피)
+- `entities/ingredient/lib/filter.test.ts` — 5 단위 테스트 (storage/categories/combined)
+- `entities/ingredient/lib/useIngredientCategories.ts` — useQuery hook (queryKey `['ingredient-categories']`, 1시간 staleTime — conventions §17.2 master cache)
+- `features/inventory-filter/ui/category-filter.tsx` — `'use client'` 멀티 선택 칩 UI (icon + name, active=primary-50/border-primary-200)
+
+### Verified
+- typecheck/lint/drift 0 errors
+- vitest 24 PASS (Phase 1 9 + Day 2 6 + Day 3 4 + Day 4 5)
+- 토큰 grep 0 forbidden
+
 ## v0.1.1-day3 (Phase 2 Day 3) — InventorySummaryHeader + sort + Zustand filter store (2026-04-30)
 
 ### Added
