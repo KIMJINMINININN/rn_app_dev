@@ -2,6 +2,17 @@
 
 본 프로젝트의 모든 주요 변경 사항은 phase 단위로 본 파일에 기록한다. 형식: [Keep a Changelog](https://keepachangelog.com/) 약식.
 
+## v0.1.1-day5 (Phase 2 Day 5) — features/move-ingredient (Server Action + UI) (2026-04-30)
+
+### Added
+- `features/move-ingredient/api/moveIngredient.ts` — `'use server'` Action, zod 검증, 새 storage 본인 소유 명시 가드 (storage_locations.user_id check) + RLS-respecting UPDATE `storage_location_id`, `Result<UserIngredient, string>` 반환, `revalidatePath('/inventory')`
+- `features/move-ingredient/ui/move-ingredient-button.tsx` — `'use client'` native select (storageLocations 옵션) + useMutation + invalidate `['ingredients']` + `['inventory-summary']` + Toast 피드백
+
+### Verified
+- typecheck/lint/drift 0 errors
+- vitest 24 PASS 회귀
+- 토큰 grep 0 forbidden
+
 ## v0.1.1-day4 (Phase 2 Day 4) — 카테고리/storage 필터 + 카테고리 query (2026-04-30)
 
 ### Added
