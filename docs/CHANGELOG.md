@@ -2,6 +2,26 @@
 
 본 프로젝트의 모든 주요 변경 사항은 phase 단위로 본 파일에 기록한다. 형식: [Keep a Changelog](https://keepachangelog.com/) 약식.
 
+## v0.1.0-day1 (Phase 1 Day 1) — DB 마이그레이션 0003-0006 + RLS + 시드 (2026-04-30)
+
+### Added
+- 0003_storage_locations.sql — `storage_kind` enum (5종) + table + RLS (SELECT/UPDATE/DELETE only; INSERT는 handle_new_user definer만)
+- 0004_ingredient_categories.sql — table (`unique nulls not distinct (user_id, name)`) + RLS (글로벌+사용자 추가) + 글로벌 시드 12 카테고리 (육류/해산물/채소/과일/유제품/곡물/조미료/가공식품/음료/간식/김치·장류/기타)
+- 0005_ingredient_master.sql — table (FK→categories, FK→storage_kind) + `gin_trgm_ops` 인덱스 + RLS (글로벌+사용자)
+- 0006_ingredient_master_seed.sql — 글로벌 시드 ~154 row (한국 가정 빈출 식재료, 카테고리/보관일수/storage_kind 매핑)
+
+### Changed
+- docs/plans/phase-1.md §2.2 + docs/plans/db-schema.md §3.2 본문 sync — 4개 SOURCE-marked ```sql 블록을 migrations 본문 그대로 갱신 (RLS + 시드 154 row 본문 추가)
+
+### Verified
+- PostgreSQL 17.6 확인 (`select version();`) — `unique nulls not distinct` 등 모던 기능 사용 가능
+- `pnpm web db:check-drift` → drift 0 (4 신규 + 2 기존 = 6 매칭)
+- `pnpm web typecheck` / `lint` 0 errors
+- (사용자 환경 액션) `pnpm web db:push` + Pre-flight PoC (`'양'/'양파'/'양ㅍ'` ad-hoc SQL similarity 측정 < 200ms) + RLS 기초 검증 — review 후 별도 진행
+
+### Spec deviations
+- phase-1.md §2.2 + db-schema.md §3.2 본문 보강 — 원래 spec은 RLS 정책 누락 + 0006 시드 verbatim 미존재. orchestrator/architect 결정으로 db-schema §4 RLS 패턴 적용 + 0006 시드 한국 식재료 ~154 row 자율 큐레이션
+
 ## v0.0.2 (Phase 0b) — App Shell + Primitives + 테스트 인프라 (2026-04-30)
 
 ### Added

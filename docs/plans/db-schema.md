@@ -149,6 +149,7 @@ create trigger on_auth_user_created
 
 <!-- SOURCE: apps/web/supabase/migrations/0003_storage_locations.sql -->
 ```sql
+-- ───────── storage_kind enum + storage_locations 테이블 ─────────
 create type storage_kind as enum ('fridge', 'freezer', 'room_temp', 'kimchi_fridge', 'custom');
 
 create table storage_locations (
@@ -160,12 +161,24 @@ create table storage_locations (
   created_at timestamptz not null default now()
 );
 create index storage_locations_user_idx on storage_locations(user_id);
+
+-- ───────── RLS — INSERT 정책 없음 (handle_new_user() definer만 INSERT) ─────────
+alter table storage_locations enable row level security;
+
+create policy "storage_locations_select_own" on storage_locations
+  for select using (auth.uid() = user_id);
+create policy "storage_locations_update_own" on storage_locations
+  for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "storage_locations_delete_own" on storage_locations
+  for delete using (auth.uid() = user_id);
+-- INSERT 정책 절대 만들지 말 것 (Architect Answer 2 + db-schema.md §4.1 주석)
 ```
 
 #### 0004_ingredient_categories.sql
 
 <!-- SOURCE: apps/web/supabase/migrations/0004_ingredient_categories.sql -->
 ```sql
+-- ───────── ingredient_categories (글로벌 시드 + 사용자 추가) ─────────
 create table ingredient_categories (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references auth.users(id) on delete cascade,  -- null = 글로벌 시드
@@ -173,8 +186,35 @@ create table ingredient_categories (
   icon text,                             -- emoji 또는 lucide 아이콘 키
   sort_order int not null default 0,
   unique nulls not distinct (user_id, name)
-  -- PG 15 미만 시: §3.0.1 partial unique index 패턴으로 대체
 );
+
+-- ───────── RLS (글로벌 + 사용자 추가, db-schema.md §4.2) ─────────
+alter table ingredient_categories enable row level security;
+
+create policy "ingredient_categories_select_global_or_own" on ingredient_categories
+  for select using (user_id is null or auth.uid() = user_id);
+create policy "ingredient_categories_insert_own" on ingredient_categories
+  for insert with check (auth.uid() = user_id);
+create policy "ingredient_categories_update_own" on ingredient_categories
+  for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "ingredient_categories_delete_own" on ingredient_categories
+  for delete using (auth.uid() = user_id);
+-- 글로벌 row (user_id IS NULL)는 admin client(service_role)만 INSERT 가능 (RLS bypass)
+
+-- ───────── 글로벌 시드 12 카테고리 (db-schema.md §6) ─────────
+insert into ingredient_categories (user_id, name, icon, sort_order) values
+  (null, '육류',       '🥩',  0),
+  (null, '해산물',     '🐟',  1),
+  (null, '채소',       '🥬',  2),
+  (null, '과일',       '🍎',  3),
+  (null, '유제품',     '🥛',  4),
+  (null, '곡물',       '🌾',  5),
+  (null, '조미료',     '🧂',  6),
+  (null, '가공식품',   '🥫',  7),
+  (null, '음료',       '🥤',  8),
+  (null, '간식',       '🍪',  9),
+  (null, '김치/장류', '🥬', 10),
+  (null, '기타',       '🍽️', 11);
 ```
 
 > **PG 15 미만 시 대체 패턴** (PLAN.md §3.0.1):
@@ -191,6 +231,7 @@ create table ingredient_categories (
 
 <!-- SOURCE: apps/web/supabase/migrations/0005_ingredient_master.sql -->
 ```sql
+-- ───────── ingredient_master (글로벌 시드 + 사용자 추가) ─────────
 create table ingredient_master (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references auth.users(id) on delete cascade,  -- null = 글로벌 시드
@@ -199,9 +240,21 @@ create table ingredient_master (
   default_shelf_life_days int,           -- null = 알 수 없음
   default_storage_kind storage_kind,
   unique nulls not distinct (user_id, name)
-  -- PG 15 미만 시: §3.0.1 partial unique index 패턴으로 대체
 );
 create index ingredient_master_name_trgm on ingredient_master using gin (name gin_trgm_ops);
+
+-- ───────── RLS (글로벌 + 사용자 추가, db-schema.md §4.2) ─────────
+alter table ingredient_master enable row level security;
+
+create policy "ingredient_master_select_global_or_own" on ingredient_master
+  for select using (user_id is null or auth.uid() = user_id);
+create policy "ingredient_master_insert_own" on ingredient_master
+  for insert with check (auth.uid() = user_id);
+create policy "ingredient_master_update_own" on ingredient_master
+  for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "ingredient_master_delete_own" on ingredient_master
+  for delete using (auth.uid() = user_id);
+-- 글로벌 row (user_id IS NULL)는 admin client(service_role)만 INSERT 가능 (RLS bypass)
 ```
 
 > **PG 15 미만 시 대체 패턴** (PLAN.md §3.0.1):
@@ -218,9 +271,201 @@ create index ingredient_master_name_trgm on ingredient_master using gin (name gi
 
 <!-- SOURCE: apps/web/supabase/migrations/0006_ingredient_master_seed.sql -->
 ```sql
--- 글로벌 식재료 ~150개 INSERT (user_id IS NULL)
--- 내용: 한국 가정 빈출 식재료 직접 정의 (대파/양파/계란/우유 등 + 기본 보관일수)
--- 실제 데이터는 PLAN.md §3.4 시드 데이터 전략 참조 + Phase 1 큐레이션 작업으로 작성
+-- 글로벌 ingredient_master ~150 row (user_id IS NULL)
+-- 카테고리는 0004에서 12 row 시드됨 (user_id IS NULL)
+-- 각 row: name + category 매핑 + default_shelf_life_days + default_storage_kind
+
+with c as (
+  select id, name
+  from public.ingredient_categories
+  where user_id is null
+)
+insert into public.ingredient_master (user_id, name, category_id, default_shelf_life_days, default_storage_kind)
+select
+  null,
+  v.name,
+  (select id from c where c.name = v.cat),
+  v.shelf,
+  v.kind::storage_kind
+from (values
+  -- ─── 육류 (~14) ───
+  ('소고기 등심',     '육류',    3,   'fridge'),
+  ('소고기 안심',     '육류',    3,   'fridge'),
+  ('소고기 양지',     '육류',    3,   'fridge'),
+  ('소고기 다짐육',   '육류',    2,   'fridge'),
+  ('돼지고기 삼겹살', '육류',    3,   'fridge'),
+  ('돼지고기 목살',   '육류',    3,   'fridge'),
+  ('돼지고기 등심',   '육류',    3,   'fridge'),
+  ('돼지고기 다짐육', '육류',    2,   'fridge'),
+  ('닭가슴살',        '육류',    3,   'fridge'),
+  ('닭다리',          '육류',    3,   'fridge'),
+  ('닭날개',          '육류',    3,   'fridge'),
+  ('닭고기 통닭',     '육류',    2,   'fridge'),
+  ('베이컨',          '육류',   14,   'fridge'),
+  ('소갈비',          '육류',    3,   'fridge'),
+
+  -- ─── 해산물 (~14) ───
+  ('고등어',          '해산물',  2,   'fridge'),
+  ('갈치',            '해산물',  2,   'fridge'),
+  ('연어',            '해산물',  2,   'fridge'),
+  ('명태',            '해산물',  2,   'fridge'),
+  ('오징어',          '해산물',  2,   'fridge'),
+  ('낙지',            '해산물',  2,   'fridge'),
+  ('새우',            '해산물',  2,   'fridge'),
+  ('조개',            '해산물',  2,   'fridge'),
+  ('홍합',            '해산물',  2,   'fridge'),
+  ('전복',            '해산물',  2,   'fridge'),
+  ('굴',              '해산물',  2,   'fridge'),
+  ('멸치',            '해산물',180,   'room_temp'),
+  ('김',              '해산물',180,   'room_temp'),
+  ('미역',            '해산물',365,   'room_temp'),
+
+  -- ─── 채소 (~32) ───
+  ('대파',            '채소',    7,   'fridge'),
+  ('쪽파',            '채소',    5,   'fridge'),
+  ('양파',            '채소',   30,   'room_temp'),
+  ('마늘',            '채소',   30,   'fridge'),
+  ('생강',            '채소',   14,   'fridge'),
+  ('감자',            '채소',   30,   'room_temp'),
+  ('고구마',          '채소',   30,   'room_temp'),
+  ('당근',            '채소',   14,   'fridge'),
+  ('배추',            '채소',   14,   'fridge'),
+  ('양배추',          '채소',   14,   'fridge'),
+  ('상추',            '채소',    5,   'fridge'),
+  ('깻잎',            '채소',    5,   'fridge'),
+  ('시금치',          '채소',    5,   'fridge'),
+  ('미나리',          '채소',    5,   'fridge'),
+  ('부추',            '채소',    5,   'fridge'),
+  ('청경채',          '채소',    5,   'fridge'),
+  ('오이',            '채소',    7,   'fridge'),
+  ('애호박',          '채소',    7,   'fridge'),
+  ('가지',            '채소',    7,   'fridge'),
+  ('파프리카',        '채소',   10,   'fridge'),
+  ('피망',            '채소',   10,   'fridge'),
+  ('고추',            '채소',   10,   'fridge'),
+  ('청양고추',        '채소',   10,   'fridge'),
+  ('토마토',          '채소',    7,   'fridge'),
+  ('방울토마토',      '채소',    7,   'fridge'),
+  ('버섯 표고',       '채소',    7,   'fridge'),
+  ('버섯 느타리',     '채소',    5,   'fridge'),
+  ('버섯 새송이',     '채소',    7,   'fridge'),
+  ('버섯 팽이',       '채소',    5,   'fridge'),
+  ('숙주',            '채소',    3,   'fridge'),
+  ('콩나물',          '채소',    3,   'fridge'),
+  ('무',              '채소',   14,   'fridge'),
+
+  -- ─── 과일 (~18) ───
+  ('사과',            '과일',   14,   'fridge'),
+  ('배',              '과일',   14,   'fridge'),
+  ('귤',              '과일',   10,   'fridge'),
+  ('오렌지',          '과일',   14,   'fridge'),
+  ('레몬',            '과일',   21,   'fridge'),
+  ('바나나',          '과일',    5,   'room_temp'),
+  ('포도',            '과일',    7,   'fridge'),
+  ('딸기',            '과일',    3,   'fridge'),
+  ('블루베리',        '과일',    7,   'fridge'),
+  ('수박',            '과일',    5,   'fridge'),
+  ('참외',            '과일',    7,   'fridge'),
+  ('복숭아',          '과일',    5,   'fridge'),
+  ('자두',            '과일',    7,   'fridge'),
+  ('체리',            '과일',    7,   'fridge'),
+  ('망고',            '과일',    5,   'fridge'),
+  ('파인애플',        '과일',    5,   'fridge'),
+  ('키위',            '과일',   14,   'fridge'),
+  ('아보카도',        '과일',    5,   'fridge'),
+
+  -- ─── 유제품 (~10) ───
+  ('우유',            '유제품',  7,   'fridge'),
+  ('저지방 우유',     '유제품',  7,   'fridge'),
+  ('치즈 슬라이스',   '유제품', 30,   'fridge'),
+  ('체다 치즈',       '유제품', 30,   'fridge'),
+  ('모짜렐라 치즈',   '유제품', 14,   'fridge'),
+  ('요거트',          '유제품', 14,   'fridge'),
+  ('그릭 요거트',     '유제품', 14,   'fridge'),
+  ('버터',            '유제품', 60,   'fridge'),
+  ('생크림',          '유제품',  7,   'fridge'),
+  ('연유',            '유제품', 60,   'fridge'),
+
+  -- ─── 곡물 (~12) ───
+  ('쌀',              '곡물',  180,   'room_temp'),
+  ('현미',            '곡물',  180,   'room_temp'),
+  ('잡곡',            '곡물',  180,   'room_temp'),
+  ('찹쌀',            '곡물',  180,   'room_temp'),
+  ('밀가루',          '곡물',  180,   'room_temp'),
+  ('부침가루',        '곡물',  180,   'room_temp'),
+  ('빵',              '곡물',    3,   'room_temp'),
+  ('식빵',            '곡물',    5,   'room_temp'),
+  ('우동면',          '곡물',   60,   'fridge'),
+  ('소면',            '곡물',  365,   'room_temp'),
+  ('스파게티',        '곡물',  365,   'room_temp'),
+  ('떡',              '곡물',    2,   'fridge'),
+
+  -- ─── 조미료 (~18) ───
+  ('간장',            '조미료',365,   'room_temp'),
+  ('진간장',          '조미료',365,   'room_temp'),
+  ('국간장',          '조미료',365,   'room_temp'),
+  ('된장',            '조미료',365,   'fridge'),
+  ('고추장',          '조미료',365,   'fridge'),
+  ('쌈장',            '조미료',180,   'fridge'),
+  ('소금',            '조미료',730,   'room_temp'),
+  ('설탕',            '조미료',730,   'room_temp'),
+  ('후추',            '조미료',365,   'room_temp'),
+  ('식초',            '조미료',365,   'room_temp'),
+  ('맛술',            '조미료',365,   'room_temp'),
+  ('참기름',          '조미료',180,   'room_temp'),
+  ('들기름',          '조미료',180,   'room_temp'),
+  ('식용유',          '조미료',180,   'room_temp'),
+  ('올리브오일',      '조미료',365,   'room_temp'),
+  ('고춧가루',        '조미료',180,   'fridge'),
+  ('마늘 다진것',     '조미료', 14,   'fridge'),
+  ('생강 다진것',     '조미료', 14,   'fridge'),
+
+  -- ─── 가공식품 (~14) ───
+  ('라면',            '가공식품',180,  'room_temp'),
+  ('컵라면',          '가공식품',180,  'room_temp'),
+  ('만두',            '가공식품', 60,  'freezer'),
+  ('어묵',            '가공식품',  7,  'fridge'),
+  ('소시지',          '가공식품', 14,  'fridge'),
+  ('햄',              '가공식품', 14,  'fridge'),
+  ('스팸',            '가공식품',365,  'room_temp'),
+  ('참치 통조림',     '가공식품',730,  'room_temp'),
+  ('꽁치 통조림',     '가공식품',730,  'room_temp'),
+  ('옥수수 통조림',   '가공식품',730,  'room_temp'),
+  ('두부',            '가공식품',  7,  'fridge'),
+  ('순두부',          '가공식품',  5,  'fridge'),
+  ('계란',            '가공식품', 21,  'fridge'),
+  ('맛김',            '가공식품', 60,  'room_temp'),
+
+  -- ─── 음료 (~8) ───
+  ('생수',            '음료',  365,   'room_temp'),
+  ('탄산수',          '음료',  180,   'room_temp'),
+  ('콜라',            '음료',  180,   'room_temp'),
+  ('사이다',          '음료',  180,   'room_temp'),
+  ('오렌지 주스',     '음료',   30,   'fridge'),
+  ('포도 주스',       '음료',   30,   'fridge'),
+  ('맥주',            '음료',   90,   'fridge'),
+  ('소주',            '음료',  730,   'room_temp'),
+
+  -- ─── 간식 (~6) ───
+  ('초콜릿',          '간식',  180,   'room_temp'),
+  ('과자',            '간식',   90,   'room_temp'),
+  ('아이스크림',      '간식',   60,   'freezer'),
+  ('견과류 믹스',     '간식',  180,   'room_temp'),
+  ('아몬드',          '간식',  180,   'room_temp'),
+  ('호두',            '간식',  180,   'room_temp'),
+
+  -- ─── 김치/장류 (~6) ───
+  ('배추김치',        '김치/장류', 60,  'kimchi_fridge'),
+  ('총각김치',        '김치/장류', 60,  'kimchi_fridge'),
+  ('깍두기',          '김치/장류', 60,  'kimchi_fridge'),
+  ('파김치',          '김치/장류', 30,  'kimchi_fridge'),
+  ('열무김치',        '김치/장류', 30,  'kimchi_fridge'),
+  ('동치미',          '김치/장류', 30,  'kimchi_fridge'),
+
+  -- ─── 기타 (~2) ───
+  ('도시락',          '기타',   2,   'fridge'),
+  ('남은 음식',       '기타',   3,   'fridge')
+) as v(name, cat, shelf, kind);
 ```
 
 #### 0007_user_ingredients.sql
