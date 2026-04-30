@@ -39,6 +39,158 @@ export type Database = {
   }
   public: {
     Tables: {
+      ingredient_categories: {
+        Row: {
+          icon: string | null
+          id: string
+          name: string
+          sort_order: number
+          user_id: string | null
+        }
+        Insert: {
+          icon?: string | null
+          id?: string
+          name: string
+          sort_order?: number
+          user_id?: string | null
+        }
+        Update: {
+          icon?: string | null
+          id?: string
+          name?: string
+          sort_order?: number
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      ingredient_master: {
+        Row: {
+          category_id: string | null
+          default_shelf_life_days: number | null
+          default_storage_kind:
+            | Database["public"]["Enums"]["storage_kind"]
+            | null
+          id: string
+          name: string
+          user_id: string | null
+        }
+        Insert: {
+          category_id?: string | null
+          default_shelf_life_days?: number | null
+          default_storage_kind?:
+            | Database["public"]["Enums"]["storage_kind"]
+            | null
+          id?: string
+          name: string
+          user_id?: string | null
+        }
+        Update: {
+          category_id?: string | null
+          default_shelf_life_days?: number | null
+          default_storage_kind?:
+            | Database["public"]["Enums"]["storage_kind"]
+            | null
+          id?: string
+          name?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ingredient_master_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "ingredient_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      storage_locations: {
+        Row: {
+          created_at: string
+          id: string
+          kind: Database["public"]["Enums"]["storage_kind"]
+          name: string
+          sort_order: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind: Database["public"]["Enums"]["storage_kind"]
+          name: string
+          sort_order?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["storage_kind"]
+          name?: string
+          sort_order?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_ingredients: {
+        Row: {
+          consumed: boolean
+          created_at: string
+          expires_at: string | null
+          id: string
+          ingredient_master_id: string
+          memo: string | null
+          purchased_at: string | null
+          quantity: number
+          storage_location_id: string
+          unit: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          consumed?: boolean
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          ingredient_master_id: string
+          memo?: string | null
+          purchased_at?: string | null
+          quantity: number
+          storage_location_id: string
+          unit?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          consumed?: boolean
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          ingredient_master_id?: string
+          memo?: string | null
+          purchased_at?: string | null
+          quantity?: number
+          storage_location_id?: string
+          unit?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_ingredients_ingredient_master_id_fkey"
+            columns: ["ingredient_master_id"]
+            isOneToOne: false
+            referencedRelation: "ingredient_master"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_ingredients_storage_location_id_fkey"
+            columns: ["storage_location_id"]
+            isOneToOne: false
+            referencedRelation: "storage_locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_profiles: {
         Row: {
           created_at: string
@@ -65,14 +217,81 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      user_ingredients_with_dday: {
+        Row: {
+          consumed: boolean | null
+          created_at: string | null
+          days_until_expiry: number | null
+          expires_at: string | null
+          id: string | null
+          ingredient_master_id: string | null
+          memo: string | null
+          purchased_at: string | null
+          quantity: number | null
+          storage_location_id: string | null
+          unit: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          consumed?: boolean | null
+          created_at?: string | null
+          days_until_expiry?: never
+          expires_at?: string | null
+          id?: string | null
+          ingredient_master_id?: string | null
+          memo?: string | null
+          purchased_at?: string | null
+          quantity?: number | null
+          storage_location_id?: string | null
+          unit?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          consumed?: boolean | null
+          created_at?: string | null
+          days_until_expiry?: never
+          expires_at?: string | null
+          id?: string | null
+          ingredient_master_id?: string | null
+          memo?: string | null
+          purchased_at?: string | null
+          quantity?: number | null
+          storage_location_id?: string | null
+          unit?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_ingredients_ingredient_master_id_fkey"
+            columns: ["ingredient_master_id"]
+            isOneToOne: false
+            referencedRelation: "ingredient_master"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_ingredients_storage_location_id_fkey"
+            columns: ["storage_location_id"]
+            isOneToOne: false
+            referencedRelation: "storage_locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
     }
     Enums: {
-      [_ in never]: never
+      storage_kind:
+        | "fridge"
+        | "freezer"
+        | "room_temp"
+        | "kimchi_fridge"
+        | "custom"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -202,6 +421,14 @@ export const Constants = {
     Enums: {},
   },
   public: {
-    Enums: {},
+    Enums: {
+      storage_kind: [
+        "fridge",
+        "freezer",
+        "room_temp",
+        "kimchi_fridge",
+        "custom",
+      ],
+    },
   },
 } as const

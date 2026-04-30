@@ -2,6 +2,25 @@
 
 본 프로젝트의 모든 주요 변경 사항은 phase 단위로 본 파일에 기록한다. 형식: [Keep a Changelog](https://keepachangelog.com/) 약식.
 
+## v0.1.0-day2 (Phase 1 Day 2) — user_ingredients + handle_new_user 교체 + 검색 RPC (2026-04-30)
+
+### Added
+- 0007_user_ingredients.sql — table + 2 부분 인덱스 (`consumed = false`) + view `user_ingredients_with_dday` + RLS `for all` (사용자별 격리, db-schema §4.1)
+- 0008_user_default_storage_locations.sql — `handle_new_user()` `CREATE OR REPLACE` — `storage_locations` 4종 (냉장실/냉동실/실온/김치냉장고) 자동 생성 추가 (기존 `user_profiles` INSERT 책임 유지). `on conflict do nothing` idempotent
+- 0008b_search_ingredient_masters.sql — pg_trgm 한국어 typeahead RPC (ILIKE prefix 1.0 / substring 0.7 / similarity hybrid, `security invoker`, anon+authenticated grant)
+
+### Changed
+- `apps/web/src/shared/api/supabase/types.ts` 재생성 (`pnpm web db:types`) — Database 타입에 storage_locations / ingredient_categories / ingredient_master / user_ingredients / view 추가 (RPC `search_ingredient_masters`는 0008b 콘솔 적용 후 추가 예정)
+- `docs/plans/phase-1.md` §2.2 + `docs/plans/db-schema.md` §3.2 — 0007 ```sql block sync (RLS 정책 추가)
+
+### Verified
+- `pnpm web db:push` 성공 (0003-0008 원격 적용)
+- `pnpm web db:check-drift` drift 0
+- `pnpm web typecheck` / `lint` 0 errors
+
+### Spec deviations
+- **0008b 파일명 supabase CLI 거부** — CLI 기본 정규식 `<digit>{4,}_<name>.sql` 패턴 외 (`0008b`의 알파벳 suffix). `db:push` 실행 시 자동 skip됨. 해결 방법: 사용자 환경에서 Supabase 콘솔 → SQL Editor → 0008b 본문 직접 실행 후 `pnpm web db:types` 재실행 → RPC 타입 자동 추가. **Day 4 features/add-ingredient typeahead 시점까지 적용 필수**.
+
 ## v0.1.0-day1 (Phase 1 Day 1) — DB 마이그레이션 0003-0006 + RLS + 시드 (2026-04-30)
 
 ### Added
