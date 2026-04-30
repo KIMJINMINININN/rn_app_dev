@@ -8,6 +8,7 @@ import { err, ok, type Result } from '@/shared/lib/result';
 
 const InputSchema = z.object({
   id: z.string().uuid(),
+  newQuantity: z.coerce.number().min(0),
 });
 
 export async function consumeIngredient(
@@ -26,7 +27,7 @@ export async function consumeIngredient(
 
   const { error } = await supabase
     .from('user_ingredients')
-    .update({ consumed: true })
+    .update({ quantity: parsed.data.newQuantity })
     .eq('id', parsed.data.id);
 
   if (error) {

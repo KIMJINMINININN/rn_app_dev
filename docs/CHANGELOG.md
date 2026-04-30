@@ -2,6 +2,25 @@
 
 본 프로젝트의 모든 주요 변경 사항은 phase 단위로 본 파일에 기록한다. 형식: [Keep a Changelog](https://keepachangelog.com/) 약식.
 
+## v0.1.1-day6 (Phase 2 Day 6) — ConsumeIngredientSheet (부분 소진) + manage-storage CRUD + widgets 통합 (2026-04-30)
+
+### Added
+- `features/consume-ingredient/ui/consume-ingredient-sheet.tsx` — `'use client'` Dialog (25/50/75/100% quick buttons, currentQuantity 비례 차감, 'use client')
+- `features/manage-storage/api/manageStorage.ts` — `addStorage` / `renameStorage` / `deleteStorage` Server Actions (zod 검증, addStorage는 admin client 우회 — 0003 RLS INSERT 정책 미존재 회피, deleteStorage는 user_ingredients 비어있어야 명시 가드)
+- `features/manage-storage/ui/manage-storage-sheet.tsx` — `'use client'` Dialog (추가/이름변경/삭제, kind='custom', window.confirm)
+
+### Changed
+- `features/consume-ingredient/api/consumeIngredient.ts` — 시그니처 확장 (BREAKING): `{ id }` → `{ id, newQuantity }`. UPDATE quantity (0 도달 시 0009 트리거가 consumed=true 자동 마킹)
+- `entities/ingredient/model/types.ts` — `IngredientWithMaster` master Pick 확장 (`'name'` → `'name' | 'category_id'`)
+- `features/list-inventory/lib/useInventoryList.ts` — select 보강 (`ingredient_master(name, category_id)`)
+- `widgets/inventory-list/ui/inventory-list.tsx` — InventorySummaryHeader + SortToggle + CategoryFilter + applyFilters/applySort 파이프라인 + MoveIngredientButton 인라인 + ConsumeIngredientSheet 통합 (categoryByMasterId Map memoize)
+- `widgets/inventory-list/ui/inventory-actions.tsx` — ManageStorageSheet 트리거 추가 (보관 장소 버튼)
+
+### Verified
+- typecheck/lint/drift 0 errors
+- vitest 24 PASS 회귀
+- 토큰 grep 0 forbidden
+
 ## v0.1.1-day5 (Phase 2 Day 5) — features/move-ingredient (Server Action + UI) (2026-04-30)
 
 ### Added

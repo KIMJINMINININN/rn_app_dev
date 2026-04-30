@@ -16,7 +16,7 @@ export function useInventoryList(userId: string | null | undefined) {
       const supabase = createSupabaseBrowserClient();
       const { data, error } = await supabase
         .from('user_ingredients')
-        .select('*, ingredient_master(name)')
+        .select('*, ingredient_master(name, category_id)')
         .eq('user_id', userId!)
         .eq('consumed', false)
         .order('expires_at', { ascending: true, nullsFirst: false });
@@ -24,7 +24,7 @@ export function useInventoryList(userId: string | null | undefined) {
 
       return (data ?? []).map((row) => ({
         ...row,
-        master: row.ingredient_master ?? { name: '(unknown)' },
+        master: row.ingredient_master ?? { name: '(unknown)', category_id: null },
       })) as IngredientWithMaster[];
     },
   });
