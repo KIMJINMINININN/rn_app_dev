@@ -2,6 +2,22 @@
 
 본 프로젝트의 모든 주요 변경 사항은 phase 단위로 본 파일에 기록한다. 형식: [Keep a Changelog](https://keepachangelog.com/) 약식.
 
+## v0.1.0-day3 (Phase 1 Day 3) — entities/ingredient (types/computeDDay/UI primitives) + 8 fixture 단위 테스트 (2026-04-30)
+
+### Added
+- `entities/ingredient/model/types.ts` — Database 파생 alias (IngredientMaster / UserIngredient / StorageLocation / IngredientCategory + Insert/Update + StorageKind enum)
+- `entities/ingredient/lib/dday-thresholds.ts` — `URGENT_THRESHOLD_DAYS=2`, `SOON_THRESHOLD_DAYS=7` 단일 출처 상수
+- `entities/ingredient/lib/computeDDay.ts` — KST(Asia/Seoul) `dayjs.tz` 보정. bucket: expired/urgent/soon/fine
+- `entities/ingredient/lib/computeDDay.test.ts` — 8 fixture (vitest `it.each` 패턴)
+- `entities/ingredient/ui/dday-badge.tsx` — bucket → Badge tone 매핑 (`'use client'`)
+- `entities/ingredient/ui/storage-card.tsx` — 보관 장소 카드 (RSC, Card primitive 사용)
+- `entities/ingredient/ui/ingredient-row.tsx` — 재료 row (DDayBadge + 소진/삭제 액션 슬롯, `'use client'`)
+
+### Verified
+- typecheck / lint / drift 0 errors
+- vitest 9 PASS (Phase 0b button 1 + Phase 1 Day 3 computeDDay 8 fixture)
+- 토큰 grep 0 forbidden in `entities/ingredient/`
+
 ## v0.1.0-day2 (Phase 1 Day 2) — user_ingredients + handle_new_user 교체 + 검색 RPC (2026-04-30)
 
 ### Added
