@@ -2,6 +2,21 @@
 
 본 프로젝트의 모든 주요 변경 사항은 phase 단위로 본 파일에 기록한다. 형식: [Keep a Changelog](https://keepachangelog.com/) 약식.
 
+## v0.1.0-day6 (Phase 1 Day 6) — inventory loading.tsx + E2E auth-guard 회귀 (2026-04-30)
+
+### Added
+- `app/(app)/inventory/loading.tsx` — Next 16 Suspense fallback, Skeleton primitive 4 storage shell + header placeholder
+- `e2e/inventory-happy-path.spec.ts` — `(app)/inventory` 미인증 → `/login` redirect 회귀 (Phase 0a/0b 가드 검증)
+
+### Verified
+- typecheck/lint/drift 0 errors, vitest 9 PASS 회귀
+- E2E 2/2 PASS (auth.spec.ts + inventory-happy-path.spec.ts, chromium PORT 3100)
+- 토큰 grep 0 forbidden
+
+### Spec deviations
+- §6.2 통합 테스트 (Vitest + supabase local) 미수행 — supabase local Docker 환경 사용자 액션 의존. Phase 2 또는 별도 작업으로 미룸
+- §6.3 E2E happy-path 본문 (가입 → 추가 → 리스트) 미수행 — 인증 fixture/세션 셋업 + RLS A vs B 시나리오는 별도 작업. 본 Day 6 E2E는 가드 회귀 1건만
+
 ## v0.1.0-day5 (Phase 1 Day 5) — list-inventory + delete + consume + widgets/inventory-list + inventory page wire (2026-04-30)
 
 ### Added
