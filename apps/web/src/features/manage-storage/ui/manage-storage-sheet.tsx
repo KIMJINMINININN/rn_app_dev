@@ -35,7 +35,8 @@ export function ManageStorageSheet({
   const queryClient = useQueryClient();
 
   const refresh = () => {
-    queryClient.invalidateQueries({ queryKey: ['storage-locations'] });
+    // storageLocations은 SSR 프롭 — revalidatePath('/inventory')가 갱신 담당.
+    // 클라이언트 캐시는 ['ingredients']만 갱신 필요.
     queryClient.invalidateQueries({ queryKey: ['ingredients'] });
   };
 

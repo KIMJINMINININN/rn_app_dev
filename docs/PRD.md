@@ -57,3 +57,4 @@
 - [x] Phase 0a — DB infra + codegen 셋업 (2026-04-30)
 - [x] Phase 0b — App Shell + Primitives + 테스트 인프라 (2026-04-30)
 - [x] Phase 1 — 인벤토리 CRUD ★ MVP (2026-04-30)
+- [x] Phase 2 — 인벤토리 고도화 (2026-04-30)

@@ -2,6 +2,45 @@
 
 본 프로젝트의 모든 주요 변경 사항은 phase 단위로 본 파일에 기록한다. 형식: [Keep a Changelog](https://keepachangelog.com/) 약식.
 
+## v0.1.1 (Phase 2) — 인벤토리 고도화 (2026-04-30)
+
+> Phase 2 (Day 1-7) 통합 마일스톤. 일별 세부 entry는 아래 v0.1.1-day{1..6} 참조.
+
+### Phase 2 종합
+- DB: 0009 (auto-consume 트리거) + 0010 (`get_inventory_summary` RPC) + `URGENT_THRESHOLD_DAYS=2` 단일 출처 동치성
+- entities/ingredient 확장: sort.ts/test, filter.ts/test, useInventorySummary, useIngredientCategories, IngredientWithMaster Pick 확장
+- features 5종: inventory-summary (Day 3), inventory-filter (Day 3-4 sort/category), move-ingredient (Day 5), consume-ingredient 확장 (Day 6 partial), manage-storage (Day 6 CRUD)
+- widgets/inventory-list 통합 (Day 6): Summary + SortToggle + CategoryFilter + Move + Consume + categoryByMasterId Map
+- Zustand `useFilterStore` (sort + categoryIds + storageId, 인메모리 only)
+- conventions §17 queryKey + §18 Zustand vs Query + §3 디자인 토큰 + §19 단일 출처 상수 모두 준수
+- FSD 준수 (Day 3 violation fix Option A 적용)
+
+### 가시적 변화 (사용자 관점)
+- 인벤토리 헤더에 (전체 N개 / 임박 M개 / 만료 K개) 카운트 배지
+- 정렬 토글 (임박순/최근/이름)
+- 카테고리 multi-select 필터
+- 보관 장소 간 이동 빠른 메뉴 (native select)
+- 부분 소진 (25/50/75/100% quick buttons) → 0 도달 시 자동 consumed (0009 트리거)
+- 사용자 정의 보관 장소 추가/이름변경/삭제 (kind='custom')
+
+### Day 7 회귀 검증
+- typecheck / lint / drift 0 errors
+- vitest 24 PASS
+- E2E 3 PASS (auth + inventory-happy-path + inventory-advanced)
+- 토큰 grep 0 forbidden
+
+### 사용자 환경 액션 (Phase 2 종료 후 별도 처리)
+1. 0009 트리거 manual SQL 검증 (insert + quantity=0 update → consumed=true 자동) — Phase 1 액션 1과 묶음 처리
+2. RLS 정책 추가 마이그레이션 (storage_locations INSERT — addStorage admin 우회 제거 위해, Phase 3+ 별도)
+3. §6.2 통합 테스트 (Vitest + supabase local, Docker)
+4. §6.3 E2E happy-path 본문 (가입 → 추가 → 정렬 → 필터 → 이동 → 부분 소진) — 인증 fixture 셋업 후
+5. (선택) `git tag v0.1.1`
+
+### Spec deviations (Phase 2 종합)
+- Day 3 FSD 위반 (entities → features 역방향) → Option A fix: `IngredientWithMaster`를 entities SSoT, `useInventorySummary`를 entities/lib로 이동
+- addStorage admin client 우회 — 0003 RLS INSERT 정책 부재. Phase 3+ RLS 정책 마이그레이션으로 정리
+- Day 6 nit cleanup: manage-storage-sheet의 dead `['storage-locations']` invalidate 제거 (revalidatePath SSR로 갱신)
+
 ## v0.1.1-day6 (Phase 2 Day 6) — ConsumeIngredientSheet (부분 소진) + manage-storage CRUD + widgets 통합 (2026-04-30)
 
 ### Added
