@@ -199,7 +199,7 @@ as $$
       ui.ingredient_master_id,
       bool_or(
         ui.expires_at is not null
-        and ui.expires_at - current_date <= 2
+        and ui.expires_at - current_date between 0 and 2
       ) as has_urgent
     from user_ingredients ui
     where ui.user_id = p_user
@@ -296,24 +296,24 @@ create policy "anyone_can_read" on recipe_ingredients for select using (true);
 
 #### 0012_recipes_seed.sql
 
-<!-- SOURCE: apps/web/supabase/migrations/0012_recipes_seed.sql -->
-```sql
--- 레시피 100선 INSERT (큐레이션 결과)
--- 내용: 한식 50선 + 양식/일식/중식 50선 직접 큐레이션
--- 각 레시피: name / description / cook_minutes / difficulty / servings / instructions_md
---            + 필수재료 5–8개 + 선택재료 2–4개
--- 카테고리 분포: 한식 30 / 양식 20 / 중식 10 / 일식 10 / 분식 10 / 디저트 10 / 기타 10
--- 실제 데이터는 Phase 3 큐레이션 작업 중 CSV → SQL 변환 스크립트로 생성됨
--- (apps/web/supabase/seeds/recipes_to_sql.mjs 1회용 스크립트)
---
--- 시드 큐레이션 가이드:
---   - 평균 5-7개 재료 / 레시피 (필수 5-8 + 선택 2-4)
---   - 50% 이상이 마트 가공식품 + 흔한 식재료 조합으로 가능
---   - cook_minutes / difficulty / servings 필수 채움
---   - recipe_ingredients.unit은 ingredient_master 시드와 동일 단위 사용 (매칭 정확도 보장)
---
--- 검증: pnpm web db:reset 후 select count(*) from recipe_master = 100
-```
+<!-- SOURCE-EXEMPT: apps/web/supabase/migrations/0012_recipes_seed.sql (auto-generated seed; drift check N/A) -->
+
+> **Auto-generated seed (drift check exempt)**. 본 파일은 `apps/web/supabase/seeds/recipes_to_sql.mjs`로
+> CSV(`recipes_100.csv`)에서 변환되어 생성되며, 마이그레이션 파일 자체가 SSoT다 (전체 INSERT를 마크다운에
+> 미러링하는 것은 비실용적 — 약 48k chars). 시드 변경 시: CSV 수정 → 스크립트 재실행 → 새 마이그레이션
+> 파일로 commit (마이그레이션은 immutable). `db:check-drift`는 이 파일을 byte 비교에서 제외한다
+> (SOURCE 마커 대신 SOURCE-EXEMPT 마커 사용).
+
+시드 큐레이션 가이드:
+- 100선 큐레이션 (한식 30 / 양식 20 / 중식 10 / 일식 11 / 분식 11 / 디저트 10 / 기타 8)
+- difficulty: easy 50 / medium 40 / hard 10
+- cook_minutes: ≤30분 53 / 31-60분 43 / >60분 4
+- 평균 약 6 재료/레시피 (필수 5-8 + 선택 0-4)
+- 50% 이상이 마트 가공식품 + 흔한 식재료 조합으로 가능
+- 모든 ingredient_name은 0006_ingredient_master_seed.sql 154개 글로벌 시드와 정확히 매칭
+- recipe_ingredients.unit은 ingredient_master 시드와 동일 단위 사용 (매칭 정확도 보장)
+
+검증: `pnpm web db:reset` 후 `select count(*) from recipe_master = 100`.
 
 #### 0013_youtube_cache.sql
 

@@ -196,7 +196,7 @@ function main() {
   const errors = [];
   const seenPairs = new Set();
   for (const [idx, row] of ingrRows.entries()) {
-    const [recipeName, ingName, qty, unit, optStr] = row;
+    const [recipeName, ingName, _qty, _unit, optStr] = row;
     if (!recipeNameSet.has(recipeName)) {
       errors.push(`row ${idx + 2}: recipe '${recipeName}' is not in recipes_100.csv`);
     }

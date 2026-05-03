@@ -699,6 +699,19 @@ grant execute on function public.get_inventory_summary(uuid)
 
 <!-- SOURCE: apps/web/supabase/migrations/0011_recipes.sql -->
 ```sql
+-- ───────── 0011_recipes.sql ─────────
+-- Phase 3 §2.2 — recipe_master / recipe_ingredients + recommend_recipes() RPC
+--
+-- 단일 출처 상수 (conventions.md §19):
+--   apps/web/src/entities/recipe/lib/scoring-constants.ts
+--   - WEIGHT_REQUIRED       = 0.7
+--   - WEIGHT_OPTIONAL       = 0.2
+--   - WEIGHT_URGENT         = 0.1
+--   - MIN_SCORE             = 0.5  (= p_min_score 기본값)
+--   - SCORE_READY_THRESHOLD = 0.95 (UI 분기용)
+-- TS mirror: apps/web/src/entities/recipe/lib/computeRecipeMatch.ts
+-- ★ 본 SQL 본문 inline 값과 TS 상수는 반드시 동일. 변경 시 두 곳 동시 변경 (PR 룰).
+
 create type recipe_difficulty as enum ('easy', 'medium', 'hard');
 
 create table recipe_master (
@@ -731,6 +744,11 @@ create index recipe_ingredients_master_idx on recipe_ingredients(ingredient_mast
 --   ≥ 0.95 → "지금 만들 수 있음"
 --   0.5 ~ 0.95 → "재료 1-2개 부족"
 --   < 0.5 → 추천 제외 (호출자가 필터링)
+--
+-- 단일 출처 상수: apps/web/src/entities/recipe/lib/scoring-constants.ts
+--   WEIGHT_REQUIRED = 0.7, WEIGHT_OPTIONAL = 0.2, WEIGHT_URGENT = 0.1
+--   MIN_SCORE = 0.5, SCORE_READY_THRESHOLD = 0.95
+--   TS↔SQL 동치성 보장 — 변경 시 두 파일 동시 변경 필수 (PR 룰)
 
 create or replace function public.recommend_recipes(
   p_user uuid,
@@ -764,7 +782,7 @@ as $$
       ui.ingredient_master_id,
       bool_or(
         ui.expires_at is not null
-        and ui.expires_at - current_date <= 2
+        and ui.expires_at - current_date between 0 and 2
       ) as has_urgent
     from user_ingredients ui
     where ui.user_id = p_user
@@ -848,19 +866,26 @@ $$;
 
 grant execute on function public.recommend_recipes(uuid, real, int)
   to authenticated;
+
+-- ───────── RLS ─────────
+alter table recipe_master enable row level security;
+create policy "anyone_can_read" on recipe_master for select using (true);
+-- INSERT 정책 없음 → admin client (service role)만 write 가능
+
+alter table recipe_ingredients enable row level security;
+create policy "anyone_can_read" on recipe_ingredients for select using (true);
+-- INSERT 정책 없음 → admin client만 write
 ```
 
 #### 0012_recipe_ingredients.sql (recipes_seed)
 
-<!-- SOURCE: apps/web/supabase/migrations/0012_recipes_seed.sql -->
-```sql
--- 레시피 100선 INSERT (큐레이션 결과)
--- 내용: 한식 50선 + 양식/일식/중식 50선 직접 큐레이션
--- 각 레시피: name / description / cook_minutes / difficulty / servings / instructions_md
---            + 필수재료 5–8개 + 선택재료 2–4개
--- 실제 데이터는 Phase 3 큐레이션 작업 중 CSV → SQL 변환 스크립트로 생성됨
--- (apps/web/supabase/seeds/recipes_to_sql.mjs 1회용 스크립트)
-```
+<!-- SOURCE-EXEMPT: apps/web/supabase/migrations/0012_recipes_seed.sql (auto-generated seed; drift check N/A) -->
+
+> **Auto-generated seed (drift check exempt)**. 본 파일은 `apps/web/supabase/seeds/recipes_to_sql.mjs`로
+> CSV(`recipes_100.csv`)에서 변환되어 생성된다. 마이그레이션이 SSoT (전체 INSERT를 본 문서에 미러링하는
+> 것은 비실용적). 시드 변경 시: CSV 수정 → 스크립트 재실행 → 새 마이그레이션 파일로 commit
+> (마이그레이션은 immutable). `db:check-drift`는 본 파일을 byte 비교에서 제외한다 (SOURCE 마커
+> 대신 SOURCE-EXEMPT 마커 사용 — drift checker는 SOURCE: 형태만 인식).
 
 #### 0013_youtube_cache.sql
 
@@ -871,7 +896,21 @@ create table youtube_cache (
   payload jsonb not null,                -- YouTube API 응답 일부 (아래 명시)
   fetched_at timestamptz not null default now()
 );
--- 24h 후 stale 처리: SELECT 시 fetched_at + interval '24 hours' < now() 체크
+-- 24h 후 stale 처리: SELECT 시 fetched_at + interval '24 hours' > now() 체크
+
+-- payload jsonb schema (TypeScript 기준):
+-- type YoutubeCachePayload = Array<{
+--   videoId: string;
+--   title: string;
+--   thumbnails: { medium: { url: string; width: number; height: number } };
+--   channelTitle: string;
+--   durationSeconds?: number;   // contentDetails.duration 파싱 후 저장 (선택)
+-- }>;  // 길이 ≤ 5
+
+-- ───────── RLS ─────────
+alter table youtube_cache enable row level security;
+create policy "anyone_can_read" on youtube_cache for select using (true);
+-- INSERT/UPDATE는 admin client(service role)에서만 → RLS bypass
 ```
 
 `youtube_cache.payload` jsonb 필드 schema (TS):

@@ -81,7 +81,7 @@ as $$
       ui.ingredient_master_id,
       bool_or(
         ui.expires_at is not null
-        and ui.expires_at - current_date <= 2
+        and ui.expires_at - current_date between 0 and 2
       ) as has_urgent
     from user_ingredients ui
     where ui.user_id = p_user
