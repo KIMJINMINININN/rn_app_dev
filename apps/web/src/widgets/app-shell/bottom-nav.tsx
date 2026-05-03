@@ -11,7 +11,7 @@ type Tab = {
 
 const TABS: Tab[] = [
   { href: '/inventory', label: '인벤토리', icon: <InventoryIcon /> },
-  { href: null, label: '레시피', icon: <RecipeIcon /> },
+  { href: '/recipes', label: '레시피', icon: <RecipeIcon /> },
   { href: null, label: '히스토리', icon: <HistoryIcon /> },
   { href: '/account', label: '마이페이지', icon: <ProfileIcon /> },
 ];
