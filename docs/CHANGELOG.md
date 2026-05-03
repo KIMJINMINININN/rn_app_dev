@@ -2,6 +2,59 @@
 
 본 프로젝트의 모든 주요 변경 사항은 phase 단위로 본 파일에 기록한다. 형식: [Keep a Changelog](https://keepachangelog.com/) 약식.
 
+## v0.3.0 (Phase 3) — 레시피 큐레이션 + YouTube ★ 데모 가능 MVP (2026-05-04)
+
+> Phase 3 (Day 1-10) 통합 마일스톤. 8 commits 반영. PRD §2.3 핵심 가치 ("재료 보고 메뉴 정함") 충족.
+
+### Phase 3 종합
+- DB: 0011 (recipe_master + recipe_ingredients + recipe_difficulty enum + recommend_recipes RPC + RLS) + 0012 (시드 100선 / 707 재료 매핑) + 0013 (youtube_cache + RLS read-only)
+- entities/recipe 슬라이스: model/types.ts (Recommendation/RecipeMaster/RecipeIngredientRow/RecipeWithMatch/RecipeDifficulty), lib/scoring-constants.ts ★ 단일 출처 (WEIGHT_REQUIRED 0.7 / WEIGHT_OPTIONAL 0.2 / WEIGHT_URGENT 0.1 / MIN_SCORE 0.5 / SCORE_READY_THRESHOLD 0.95), lib/computeRecipeMatch.ts (TS mirror), ui 4종 (RecipeCard / MatchScore / MissingIngredientsList / RecipeYoutubeEmbed nocookie+IO)
+- features 3종: list-recommendations (TanStack queryKey ['recipes','recommendations',userId] staleTime 5분), youtube-embed Route Handler (server-only, helpers 분리, env guard graceful), view-recipe-match (보유/필수 부족/선택 부족 3섹션)
+- widgets 2종: recipe-recommendations (섹션 분리 readability 0.95↑ / 0.5≤s<0.95), recipe-detail (메타 + breakdown + instructions_md + YouTube)
+- pages: /(app)/recipes (RSC + recommend_recipes 직접 호출) + /[id]/page.tsx (RSC + computeRecipeMatch + ingredient_master id→name Map + cache lookup-only YouTube) + loading.tsx
+- BottomNav 레시피 탭 활성화 (히스토리는 Phase 4 그대로)
+- 시드 큐레이션 1회용 스크립트 (apps/web/supabase/seeds/recipes_to_sql.mjs, byte-idempotent, stdlib only, validation throw)
+
+### 매칭 공식 (★ 단일 출처)
+score = 0.7 * (필수보유/필수전체) + 0.2 * (선택보유/max(선택전체,1)) + 0.1 * (임박보유/필수전체)
+임계값: ≥ 0.95 "지금 만들 수 있음" / 0.5 ~ 0.95 "재료 1-2개 부족" / < 0.5 추천 제외
+
+### 가시적 변화 (사용자 관점)
+- /(app)/recipes — 보유 재료 기반 추천 레시피 그리드 (점수 ≥ 0.5, 섹션 분리)
+- 카드: 이름 + score 배지(N/M) + 부족 재료 N개 + 임박 활용 배지 + 메타(cook/difficulty/servings)
+- 레시피 상세: 보유/필수 부족/선택 부족 분리 + instructions_md + YouTube 임베드 (캐시 hit 시)
+- BottomNav "레시피" 탭 활성
+
+### Spec deviations
+- 0011 SQL urgent 조건 `<= 2` → `between 0 and 2` 정정 (Day 4) — TS computeRecipeMatch isUrgent와 정합 + 0010 패턴 일관 (architect Day 3 minor)
+- 0012 SOURCE → SOURCE-EXEMPT 마커 (auto-generated 75KB seed; 마이그레이션 자체가 SSoT, db:check-drift 제외)
+- DB 타입 자동 생성 보류 (recipe_master/youtube_cache/recommend_recipes RPC) — 사용자 db:push 후 `pnpm web db:types`로 cast 제거 가능
+- YouTube 서버사이드 cache lookup만 (실제 fetch는 Route Handler client-side) — quota 보호
+
+### Day 10 회귀 검증
+- pnpm web typecheck → 0 errors
+- pnpm web lint → 0 errors  
+- pnpm web test → 21 PASS (entities/recipe) / 1 skip (SUPABASE_LOCAL_URL conditional)
+- pnpm web db:check-drift → 26/26 matched, 0 mismatches
+- pnpm web build → ✓ Compiled successfully (1.5s), /recipes + /recipes/[id] dynamic 등록
+
+### 사용자 환경 deferred (Phase 1/2 §6 패턴 동일)
+- 0011/0012/0013 마이그레이션 실제 DB 적용 (`pnpm web db:push --linked` 또는 db:reset)
+- §6.2 supabase local Docker + SUPABASE_LOCAL_URL → equivalence.spec RPC 정합성 (TS↔SQL score < 0.0001)
+- §6.3 E2E 실행 (`pnpm web test:e2e`) — recipes-happy-path.spec.ts 3 케이스
+- 모바일 웹뷰 스모크 (Vercel preview + EAS build, conventions §7)
+- YouTube Data API v3 키 발급 시 Route Handler 실제 fetch 검증 (현재 graceful empty)
+
+### Commits (Phase 3)
+- 77effda Day 1-2 — 레시피 100선 큐레이션 + 0012_recipes_seed
+- 60bc036 Day 3 — 0011 recommend_recipes RPC + scoring SSoT + TS mirror + 단위 테스트
+- 8f3d0aa Day 4 — 0013_youtube_cache + 0011 urgent fix + TS↔SQL 동치성 테스트
+- 474b9d4 Day 5 — entities/recipe/ui 4개 컴포넌트
+- bc5b980 Day 6 — features/list-recommendations + youtube-embed Route Handler + view-recipe-match
+- 2259367 Day 7 — pages /(app)/recipes + [id] + widgets + BottomNav 활성화 ★ 데모 MVP
+- aebf509 Day 8 — E2E recipes-happy-path.spec.ts (3 케이스)
+- (Day 9-10) — 본 entry 추가 + 회귀 검증 + tag v0.3.0
+
 ## v0.1.1 (Phase 2) — 인벤토리 고도화 (2026-04-30)
 
 > Phase 2 (Day 1-7) 통합 마일스톤. 일별 세부 entry는 아래 v0.1.1-day{1..6} 참조.
