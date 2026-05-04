@@ -2,19 +2,101 @@
 
 본 프로젝트의 모든 주요 변경 사항은 phase 단위로 본 파일에 기록한다. 형식: [Keep a Changelog](https://keepachangelog.com/) 약식.
 
-## [Unreleased] (Phase 5) — 장보기 브릿지 (진행 중, 2026-05-04~)
+## v0.5.0 (Phase 5) — 장보기 브릿지 + 커머스 deeplink (2026-05-04)
 
-### Day 0 — Pre-flight URL 검증 (chrome-devtools MCP 헤드리스)
+> Phase 5 (Day 1-7) 통합 마일스톤. 5 commits 반영. PRD §2.5 핵심 가치 ("레시피 부족 재료 → 장바구니 자동 추출 → 커머스 deeplink") 충족.
+
+### Day 1 — Pre-flight URL 검증 + 0016 마이그레이션
+
+Pre-flight (chrome-devtools MCP 헤드리스, phase-5.md §0):
 
 | 사이트 | 결과 | URL 패턴 | env 디폴트 |
 |---|---|---|---|
-| 쿠팡 | ⚠️ 헤드리스에서 anti-bot 차단 (`{"rCode":"RET9999"}`). URL 패턴은 표준 검색 endpoint이므로 실 사용자 브라우저에서는 정상 동작 가정 | `https://www.coupang.com/np/search?q={encoded}` | `NEXT_PUBLIC_COUPANG_ENABLED=true` |
-| 마켓컬리 | ✓ 검증 완료. "양파" 90 상품 / "삼겹살" 96 상품 노출. 자동 redirect `&page=1` 추가됨 | `https://www.kurly.com/search?sword={encoded}` | `NEXT_PUBLIC_KURLY_ENABLED=true` |
-| B마트 | ✗ 웹 검색 미지원. `https://www.baemin.com/search?query=양파` → 404. 본질적으로 앱 전용 서비스 (위치 기반) | (없음) | `NEXT_PUBLIC_BAEMIN_ENABLED=false` |
+| 쿠팡 | ⚠️ 헤드리스 anti-bot 차단 (`RET9999`), URL 패턴 표준 → 실 브라우저 정상 가정 | `https://www.coupang.com/np/search?q={enc}` | `NEXT_PUBLIC_COUPANG_ENABLED=true` |
+| 마켓컬리 | ✓ "양파" 90 / "삼겹살" 96 상품 노출 + redirect `&page=1` | `https://www.kurly.com/search?sword={enc}` | `NEXT_PUBLIC_KURLY_ENABLED=true` |
+| B마트 | ✗ `/search` 404 (앱 전용, 위치 기반) | (없음) | `NEXT_PUBLIC_BAEMIN_ENABLED=false` |
 
-→ `apps/web/.env.local` + `apps/web/.env.example`에 토글 3개 추가. `buildCommerceUrl.ts`는 토글 false 시 빈 문자열 반환 → UI에서 해당 deeplink 버튼 숨김.
+DB:
+- 0016_shopping_list.sql 신규 (enum shopping_source + table shopping_list 11 컬럼 + 부분 index + RLS 4정책)
+- shopping_list: id/user_id/ingredient_master_id/custom_name/quantity/unit/source/recipe_id/bought/note/created_at
+- 부분 인덱스: shopping_list_user_active_idx on (user_id) where bought = false
+- RLS: own select/insert/update/delete (auth.uid() = user_id)
+- spec sync: phase-5.md §2.2 + db-schema.md §3.2 SOURCE 블록에 RLS 통합 (Phase 4 0014 패턴 일관)
+- env: apps/web/.env.local + .env.example에 NEXT_PUBLIC_COUPANG_ENABLED / KURLY_ENABLED / BAEMIN_ENABLED 추가
 
-→ 사용자 액션: 실 브라우저(데스크톱/모바일)에서 쿠팡 URL 1회 직접 확인 권장. 차단되면 `NEXT_PUBLIC_COUPANG_ENABLED=false`로 토글.
+### Day 2-3 — entities/shopping-item (model + lib + 13 단위 테스트)
+
+- model/types.ts: ShoppingSource, ShoppingItem (DB 1:1), 보조 (RecipeIngredientRow / UserIngredientRow / GapItem)
+- model/checked-store.ts: Zustand store (Set<string>, 불변성 위해 새 인스턴스 생성). zustand@^5.0.12 기존 사용
+- lib/extract-recipe-gap.ts: pure function (consumed=false && qty>0 풀, 동일 master_id+unit 합산 후 양 충족 시 보유 / 단위 충돌 시 note='단위 확인 필요' / 자동 단위 변환 OOS)
+- lib/build-commerce-url.ts: env 토글 (NEXT_PUBLIC_*_ENABLED) 분기. encodeURIComponent. bmart는 토글 true여도 빈 문자열 + console.warn (Pre-flight 웹 미지원 확정)
+- 테스트: 2 file / 13 PASS (gap 7 케이스 + URL 6 케이스)
+
+### Day 4-5 — Server Actions 4 + UI 컴포넌트 5 + page + recipe-detail 통합
+
+Server Actions (모두 Result<T,string> + auth check + Zod 검증 + revalidatePath('/shopping')):
+- extract-recipe-gap: recipe_ingredients(JOIN ingredient_master.name) + user_ingredients(consumed=false, qty>0) → calcGap → 동일 (master_id, unit, source='recipe_gap', bought=false) row 합산 UPDATE / 단위 충돌은 별도 INSERT(note 보존) / 신규 INSERT — { added: number } 반환
+- manual-add-shopping: name(1-80) + quantity?/unit? → source='manual', custom_name 세팅, ingredient_master_id=null
+- toggle-bought: shopping_list UPDATE bought (RLS 자동 격리)
+- delete-shopping-item: shopping_list DELETE (RLS 자동 격리)
+
+UI 컴포넌트 5:
+- entities/shopping-item/ui/shopping-item-row.tsx: client + useTransition + 낙관적 bought 토글 (실패 시 revert), note 강조, CommerceLinkMenu 임베드, 삭제 confirm
+- features/extract-recipe-gap/ui/extract-gap-button.tsx: client + useTransition + toast (added=0 또는 N개 추가 + /shopping 안내)
+- features/manual-add-shopping/ui/add-shopping-dialog.tsx: client + Dialog primitive + 폼 검증 + 제출 후 리셋
+- features/commerce-deeplink/ui/commerce-link-menu.tsx: server. buildCommerceUrl truthy인 사이트만 a[target=_blank, rel=noopener noreferrer] 노출 (Pre-flight 결과로 0-2개)
+- widgets/shopping-list/shopping-list.tsx: client (Dialog state). useMemo로 미구매/구매완료 분리 + 빈 상태 + "항목 추가" 트리거
+
+페이지 3:
+- app/(app)/shopping/page.tsx: RSC. auth → shopping_list select(*, ingredient_master(name)) order(created_at desc) → ShoppingList 렌더
+- app/(app)/shopping/loading.tsx: header + 4 row Skeleton
+- app/(app)/shopping/error.tsx: client + console.error + reset 버튼
+
+통합:
+- widgets/recipe-detail/recipe-detail.tsx: ExtractGapButton import + "요리 시작" 아래 배치 (recipeId prop)
+
+### Day 6 — E2E 2 spec + 검증 4/5 PASS
+
+E2E specs (Playwright, 사용자 환경 deferred):
+- e2e/shopping-list.spec.ts (227 lines): 가입 → 식재료 → 레시피 상세 → "부족 재료 담기" → /shopping → 커머스 deeplink 새 탭 검증 (page.context().waitForEvent('page'))
+- e2e/shopping-manual-add.spec.ts (227 lines): 가입 → /shopping → 다이얼로그 추가 → 체크 토글 (구매완료 섹션 이동) → 삭제 (page.on('dialog', d => d.accept()) 패턴)
+
+### Day 7 회귀 검증
+
+- pnpm web typecheck → 0 errors ✓
+- pnpm web lint → 0 errors ✓
+- pnpm web test → 11 file / 67 PASS / 1 skip ✓ (Day 2-3 13 추가)
+- pnpm web db:check-drift → 34/34 matched, 0 mismatches ✓ (0016 SOURCE 블록 phase-5.md/db-schema.md 양쪽 일치)
+- pnpm web build → ⏭️ 미실행 (전 phase 패턴 동일, Vercel preview에서 검증)
+
+### 가시적 변화 (사용자 관점)
+
+- ★ 레시피 상세에 "부족 재료 장바구니에 담기" 버튼 → 클릭 시 자동 추출 + 단위 동일 시 합산
+- ★ /(app)/shopping 페이지 — 미구매/구매완료 섹션 분리 + 항목별 (쿠팡/마켓컬리) deeplink 버튼 (활성 사이트만 노출)
+- ★ 단위 충돌 항목은 ⚠ "단위 확인 필요" note 표시
+- ★ 수동 항목 추가 다이얼로그 + 체크/삭제
+
+### Spec deviations
+
+- BottomNav 미수정 (4 슬롯 그대로 — Phase 4 cooking-history 선례 일관). 진입점은 (a) recipe-detail의 ExtractGapButton toast 안내 + (b) 직접 URL `/shopping`. BottomNav 활성화는 Phase 6+ 또는 별도 결정
+- DB types 미반영 → untyped cast 5곳 (각 파일 헤더 사유 주석, 사용자 db:types 후 제거 가능)
+- B마트 web deeplink 영구 비활성 (앱 전용 서비스 — Pre-flight 결과)
+
+### 사용자 환경 deferred (Phase 1+2+3+4 패턴 동일)
+
+- 0016 마이그레이션 실제 DB 적용 (`pnpm web db:reset` + `db:push --linked`)
+- DB types 재생성 (`pnpm web db:types`) — 5 untyped cast 제거 가능
+- E2E 실행 (`pnpm web test:e2e`) — Docker + dev server :3100 필요
+- 모바일 웹뷰 스모크 (Vercel preview + EAS build, conventions §7)
+- (선택) 실 브라우저에서 쿠팡 URL 1회 검증 (헤드리스에서 봇 차단됐으므로)
+
+### Commits (Phase 5)
+
+- c88dde7 Day 1 — Pre-flight URL 검증 + 0016_shopping_list (table+enum+index+RLS) + spec sync
+- 6df656c Day 2-3 — entities/shopping-item (model + lib + 13 단위 테스트)
+- 21811e4 Day 4-5 — Server Actions 4 + UI 컴포넌트 5 + /(app)/shopping 페이지 + recipe-detail 통합
+- 7dd16f1 Day 6 — E2E 2 spec (shopping-list + shopping-manual-add) + 검증 4/5 PASS
+- (Day 7 — CHANGELOG v0.5.0 + PRD §3 + tag, 본 커밋)
 
 ---
 
