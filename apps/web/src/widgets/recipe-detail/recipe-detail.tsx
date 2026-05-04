@@ -21,6 +21,7 @@ import type {
   RecipeIngredientRow,
   RecipeMaster,
 } from '@/entities/recipe/model/types';
+import { ExtractGapButton } from '@/features/extract-recipe-gap/ui/extract-gap-button';
 import type { UserIngredientForPayload } from '@/features/log-cooking-session/lib/build-consumed-payload';
 import { IngredientMatchBreakdown } from '@/features/view-recipe-match/ui/ingredient-match-breakdown';
 
@@ -60,13 +61,14 @@ export function RecipeDetail({
       <header className="flex flex-col gap-12">
         <div className="flex items-start justify-between gap-12">
           <h1 className="text-heading-l text-gray-900">{recipe.name}</h1>
-          <div className="shrink-0">
+          <div className="flex shrink-0 flex-col items-end gap-8">
             <StartCookingButton
               recipe={recipe}
               recipeIngredients={recipeIngredients}
               userIngredients={userIngredients}
               ingredientNames={ingredientNames}
             />
+            <ExtractGapButton recipeId={recipe.id} />
           </div>
         </div>
         {recipe.description && (
