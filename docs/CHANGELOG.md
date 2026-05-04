@@ -2,6 +2,64 @@
 
 본 프로젝트의 모든 주요 변경 사항은 phase 단위로 본 파일에 기록한다. 형식: [Keep a Changelog](https://keepachangelog.com/) 약식.
 
+## v0.4.0 (Phase 4) — 요리 히스토리 + 듀얼 추천 (2026-05-04)
+
+> Phase 4 (Day 1-7) 통합 마일스톤. 7 commits 반영. PRD §2.4 핵심 가치 ("재료 클릭 → 과거/신규 레시피 병렬 표시") 충족.
+
+### Phase 4 종합
+- DB: 0014 (cooking_history + cooking_history_consumed_ingredients + RLS 4정책 + 인덱스 2) + 0015a (recommend_for_ingredient RPC, sql stable, past+new 듀얼 jsonb) + 0015b (log_cooking_session plpgsql 원자 트랜잭션 RPC, security invoker, FOR UPDATE 락, expires_at asc 우선 차감)
+- entities/cooking-history 슬라이스: model/types.ts (CookingHistoryRow / CookingHistoryConsumedRow / CookingSession), ui/history-row.tsx (Server Component, 평점/메모/consumed 재료 표시)
+- features 2종: log-cooking-session (Server Action + Dialog + build-consumed-payload + 9 단위 테스트), dual-recommendation (TanStack hook + DualList Server Component)
+- widgets 2종: cooking-history-list (Server Component, 빈 상태), recipe-detail에 StartCookingButton client wrapper 통합 (RSC 표면 보존)
+- pages: /(app)/cooking-history (RSC, 4 sequential fetch + 50 LIMIT), /(app)/inventory/[ingredientId] (RSC, recommend_for_ingredient 직접 호출 + ingredient_master 이름 + DualList)
+- entities/ingredient/ui/ingredient-row.tsx 수정: Link 부분 wrap (이름+수량만, button-in-anchor invalid HTML 회피) → /inventory/[ingredient_master_id]
+
+### log_cooking_session 원자성 (★ 핵심)
+- auth.uid() ≠ p_user → raise exception 'unauthorized: auth.uid() mismatch' (자동 rollback, Server Action 한국어 변환)
+- cooking_history INSERT + 각 consumed item에 대해 cooking_history_consumed_ingredients INSERT + user_ingredients FOR UPDATE 부분 차감 (expires_at asc nulls last, created_at asc — 임박 재료 우선)
+- 분기: row.qty ≤ remaining → quantity=0+consumed=true (전체 소진), 그 외 → quantity = quantity - remaining (부분 차감)
+- 0009 트리거 double-write idempotent: 트리거가 quantity=0 시 consumed=true 자동 처리, RPC도 명시 update → 동일 값 set 안전
+
+### recommend_for_ingredient (★ 핵심)
+- past CTE: cooking_history join recipe_master + recipe_ingredients (master_id 필터) → max(cooked_at) desc
+- new_candidates CTE: recommend_recipes(p_user, 0.5, 100) RPC (Phase 3) join recipe_ingredients + master_id + cooking_history NOT EXISTS → score desc, cook_minutes asc
+- 빈 결과 graceful coalesce(jsonb_agg, '[]'::jsonb)
+
+### 가시적 변화 (사용자 관점)
+- 레시피 상세에 "요리 시작" CTA 버튼 → 다이얼로그 (수량 차감 미리보기 + 평점 1-5 + 메모) → 확정 → 기록 + 인벤토리 자동 차감
+- /(app)/cooking-history 페이지 — 과거 요리 기록 리스트 (cooked_at desc, 50 LIMIT)
+- 인벤토리 재료 클릭 → /(app)/inventory/[ingredientId] — 좌(과거 요리) / 우(신규 추천) 듀얼 레시피 그리드
+- 빈 상태 처리 (요리 기록 없음 / 추천 없음)
+
+### Spec deviations
+- 0014 RLS DDL을 §2.2 SOURCE 블록 안으로 통합 (Phase 3 0011 패턴 일관 — phase-4.md + db-schema.md 동시 spec patch)
+- DB types 미재생성 (cooking_history/cooking_history_consumed_ingredients/log_cooking_session/recommend_for_ingredient 4개 RPC) — 사용자 db:push 후 db:types 갱신 가능
+- BottomNav "히스토리" 탭 그대로 disabled (phase-4.md 명시 없음 — 진입 동선은 후속 PRD 결정)
+- cooking-history page 4 sequential fetch — Phase 5+ 통합 RPC 검토 (현 50 LIMIT + 인덱스 충분)
+
+### Day 7 회귀 검증
+- pnpm web typecheck → 0 errors
+- pnpm web lint → 0 errors  
+- pnpm web test → 9 file / 54 PASS / 1 skip (Day 4 신규 9 fixture 추가)
+- pnpm web db:check-drift → matched, 0 mismatches (0014/0015a/0015b 신규 추가 후 검증)
+- pnpm web build → ✓ Compiled, /cooking-history + /inventory/[ingredientId] dynamic 등록
+
+### 사용자 환경 deferred (Phase 1+2+3 패턴 동일)
+- 0014/0015a/0015b 마이그레이션 실제 DB 적용 (`pnpm web db:push --linked` 또는 db:reset)
+- DB types 재생성 (cast 제거)
+- §6.2 supabase local Docker → 0015b log_cooking_session 트랜잭션 통합 테스트 (rollback 시뮬레이션 + double-write idempotent 검증)
+- §6.3 E2E 실행 (`pnpm web test:e2e`) — cooking-history-happy-path.spec.ts (요리 시작 → 기록 → 인벤토리 차감)
+- 모바일 웹뷰 스모크 (Vercel preview + EAS build, conventions §7)
+
+### Commits (Phase 4)
+- 8070c09 Day 1 — 0014_cooking_history + RLS 4정책 + spec sync (phase-4.md/db-schema.md byte 일치)
+- 0435362 Day 2 — 0015a_recommend_for_ingredient RPC (듀얼 추천)
+- 36ff643 Day 3 — 0015b_log_cooking_session plpgsql 원자 트랜잭션 RPC
+- e93ca05 Day 4 — features/log-cooking-session (Server Action + Dialog + util + 9 단위 테스트)
+- 4eb33cf Day 5 — features/dual-recommendation + /(app)/inventory/[ingredientId] + ingredient-row 클릭 핸들러
+- d564cec Day 6 — entities/cooking-history + widgets/cooking-history-list + cooking-history page + "요리 시작" 통합
+- (Day 7) — E2E + 회귀 + 본 entry + tag v0.4.0
+
 ## v0.3.0 (Phase 3) — 레시피 큐레이션 + YouTube ★ 데모 가능 MVP (2026-05-04)
 
 > Phase 3 (Day 1-10) 통합 마일스톤. 8 commits 반영. PRD §2.3 핵심 가치 ("재료 보고 메뉴 정함") 충족.
