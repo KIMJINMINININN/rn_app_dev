@@ -39,6 +39,80 @@ export type Database = {
   }
   public: {
     Tables: {
+      cooking_history: {
+        Row: {
+          cooked_at: string
+          custom_recipe_name: string | null
+          id: string
+          memo: string | null
+          rating: number | null
+          recipe_id: string | null
+          user_id: string
+        }
+        Insert: {
+          cooked_at?: string
+          custom_recipe_name?: string | null
+          id?: string
+          memo?: string | null
+          rating?: number | null
+          recipe_id?: string | null
+          user_id: string
+        }
+        Update: {
+          cooked_at?: string
+          custom_recipe_name?: string | null
+          id?: string
+          memo?: string | null
+          rating?: number | null
+          recipe_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cooking_history_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipe_master"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cooking_history_consumed_ingredients: {
+        Row: {
+          history_id: string
+          ingredient_master_id: string
+          quantity: number | null
+          unit: string | null
+        }
+        Insert: {
+          history_id: string
+          ingredient_master_id: string
+          quantity?: number | null
+          unit?: string | null
+        }
+        Update: {
+          history_id?: string
+          ingredient_master_id?: string
+          quantity?: number | null
+          unit?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cooking_history_consumed_ingredients_history_id_fkey"
+            columns: ["history_id"]
+            isOneToOne: false
+            referencedRelation: "cooking_history"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cooking_history_consumed_ingredients_ingredient_master_id_fkey"
+            columns: ["ingredient_master_id"]
+            isOneToOne: false
+            referencedRelation: "ingredient_master"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ingredient_categories: {
         Row: {
           icon: string | null
@@ -100,6 +174,135 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "ingredient_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recipe_ingredients: {
+        Row: {
+          ingredient_master_id: string
+          is_optional: boolean
+          quantity: number | null
+          recipe_id: string
+          unit: string | null
+        }
+        Insert: {
+          ingredient_master_id: string
+          is_optional?: boolean
+          quantity?: number | null
+          recipe_id: string
+          unit?: string | null
+        }
+        Update: {
+          ingredient_master_id?: string
+          is_optional?: boolean
+          quantity?: number | null
+          recipe_id?: string
+          unit?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipe_ingredients_ingredient_master_id_fkey"
+            columns: ["ingredient_master_id"]
+            isOneToOne: false
+            referencedRelation: "ingredient_master"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipe_ingredients_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipe_master"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recipe_master: {
+        Row: {
+          cook_minutes: number | null
+          created_at: string
+          description: string | null
+          difficulty: Database["public"]["Enums"]["recipe_difficulty"]
+          id: string
+          instructions_md: string | null
+          name: string
+          servings: number | null
+        }
+        Insert: {
+          cook_minutes?: number | null
+          created_at?: string
+          description?: string | null
+          difficulty?: Database["public"]["Enums"]["recipe_difficulty"]
+          id?: string
+          instructions_md?: string | null
+          name: string
+          servings?: number | null
+        }
+        Update: {
+          cook_minutes?: number | null
+          created_at?: string
+          description?: string | null
+          difficulty?: Database["public"]["Enums"]["recipe_difficulty"]
+          id?: string
+          instructions_md?: string | null
+          name?: string
+          servings?: number | null
+        }
+        Relationships: []
+      }
+      shopping_list: {
+        Row: {
+          bought: boolean
+          created_at: string
+          custom_name: string | null
+          id: string
+          ingredient_master_id: string | null
+          note: string | null
+          quantity: number | null
+          recipe_id: string | null
+          source: Database["public"]["Enums"]["shopping_source"]
+          unit: string | null
+          user_id: string
+        }
+        Insert: {
+          bought?: boolean
+          created_at?: string
+          custom_name?: string | null
+          id?: string
+          ingredient_master_id?: string | null
+          note?: string | null
+          quantity?: number | null
+          recipe_id?: string | null
+          source?: Database["public"]["Enums"]["shopping_source"]
+          unit?: string | null
+          user_id: string
+        }
+        Update: {
+          bought?: boolean
+          created_at?: string
+          custom_name?: string | null
+          id?: string
+          ingredient_master_id?: string | null
+          note?: string | null
+          quantity?: number | null
+          recipe_id?: string | null
+          source?: Database["public"]["Enums"]["shopping_source"]
+          unit?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shopping_list_ingredient_master_id_fkey"
+            columns: ["ingredient_master_id"]
+            isOneToOne: false
+            referencedRelation: "ingredient_master"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shopping_list_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipe_master"
             referencedColumns: ["id"]
           },
         ]
@@ -218,6 +421,24 @@ export type Database = {
         }
         Relationships: []
       }
+      youtube_cache: {
+        Row: {
+          fetched_at: string
+          payload: Json
+          query_key: string
+        }
+        Insert: {
+          fetched_at?: string
+          payload: Json
+          query_key: string
+        }
+        Update: {
+          fetched_at?: string
+          payload?: Json
+          query_key?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       user_ingredients_with_dday: {
@@ -293,6 +514,25 @@ export type Database = {
           total: number
         }[]
       }
+      recommend_recipes: {
+        Args: { p_limit?: number; p_min_score?: number; p_user: string }
+        Returns: {
+          cook_minutes: number
+          description: string
+          difficulty: Database["public"]["Enums"]["recipe_difficulty"]
+          missing_optional: Json
+          missing_required: Json
+          name: string
+          optional_have: number
+          optional_total: number
+          recipe_id: string
+          required_have: number
+          required_total: number
+          score: number
+          servings: number
+          urgent_have: number
+        }[]
+      }
       search_ingredient_masters: {
         Args: { p_limit?: number; p_query: string; p_user_id: string }
         Returns: {
@@ -308,6 +548,8 @@ export type Database = {
       show_trgm: { Args: { "": string }; Returns: string[] }
     }
     Enums: {
+      recipe_difficulty: "easy" | "medium" | "hard"
+      shopping_source: "manual" | "recipe_gap"
       storage_kind:
         | "fridge"
         | "freezer"
@@ -444,6 +686,8 @@ export const Constants = {
   },
   public: {
     Enums: {
+      recipe_difficulty: ["easy", "medium", "hard"],
+      shopping_source: ["manual", "recipe_gap"],
       storage_kind: [
         "fridge",
         "freezer",
