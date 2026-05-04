@@ -948,6 +948,20 @@ create table cooking_history_consumed_ingredients (
 );
 create index cooking_history_consumed_ingredient_idx
   on cooking_history_consumed_ingredients(ingredient_master_id);
+
+-- ───────── RLS ─────────
+alter table cooking_history enable row level security;
+create policy "cooking_history_select_own" on cooking_history
+  for select using (auth.uid() = user_id);
+create policy "cooking_history_insert_own" on cooking_history
+  for insert with check (auth.uid() = user_id);
+create policy "cooking_history_update_own" on cooking_history
+  for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "cooking_history_delete_own" on cooking_history
+  for delete using (auth.uid() = user_id);
+
+-- cooking_history_consumed_ingredients는 cooking_history FK cascade로 격리
+-- 별도 RLS 정책 불필요 (직접 접근 없음, RPC 통해서만 write — log_cooking_session에서)
 ```
 
 #### 0015a_recommend_for_ingredient.sql

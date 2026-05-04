@@ -127,6 +127,20 @@ create table cooking_history_consumed_ingredients (
 );
 create index cooking_history_consumed_ingredient_idx
   on cooking_history_consumed_ingredients(ingredient_master_id);
+
+-- ───────── RLS ─────────
+alter table cooking_history enable row level security;
+create policy "cooking_history_select_own" on cooking_history
+  for select using (auth.uid() = user_id);
+create policy "cooking_history_insert_own" on cooking_history
+  for insert with check (auth.uid() = user_id);
+create policy "cooking_history_update_own" on cooking_history
+  for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "cooking_history_delete_own" on cooking_history
+  for delete using (auth.uid() = user_id);
+
+-- cooking_history_consumed_ingredients는 cooking_history FK cascade로 격리
+-- 별도 RLS 정책 불필요 (직접 접근 없음, RPC 통해서만 write — log_cooking_session에서)
 ```
 
 #### 0015a_recommend_for_ingredient.sql
@@ -294,20 +308,13 @@ grant execute on function public.log_cooking_session(uuid, uuid, text, jsonb, in
 
 ### 2.3 RLS 정책
 
-- `cooking_history`: 사용자별 격리 (`auth.uid() = user_id`) — db-schema §4.1 패턴 적용
-  ```sql
-  alter table cooking_history enable row level security;
-  create policy "cooking_history_select_own" on cooking_history
-    for select using (auth.uid() = user_id);
-  create policy "cooking_history_insert_own" on cooking_history
-    for insert with check (auth.uid() = user_id);
-  create policy "cooking_history_update_own" on cooking_history
-    for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
-  create policy "cooking_history_delete_own" on cooking_history
-    for delete using (auth.uid() = user_id);
-  ```
-- `cooking_history_consumed_ingredients`: `cooking_history` FK cascade로 격리. 별도 RLS 정책 불필요 (직접 접근 없음, RPC 통해서만 write).
-- `recommend_for_ingredient` / `log_cooking_session`: `security invoker` — 호출자의 RLS context 그대로 적용. `auth.uid()` 검증은 함수 본문 내 explicit check.
+※ RLS DDL 본문은 §2.2 0014_cooking_history.sql SOURCE 블록 안에 포함되어 있다 (단일 출처).
+
+| 테이블 | 패턴 | 근거 |
+|---|---|---|
+| `cooking_history` | 사용자별 격리 (`auth.uid() = user_id`) — select/insert/update/delete 4정책 | db-schema §4.1 |
+| `cooking_history_consumed_ingredients` | 별도 RLS 불필요 — `cooking_history` FK cascade로 격리, RPC 통해서만 write | §2.2 0014 주석 |
+| `recommend_for_ingredient` / `log_cooking_session` | `security invoker` — 호출자의 RLS context 그대로 적용. `auth.uid()` 검증은 함수 본문 내 explicit check | §1.5 Architect 결정 |
 
 ### 2.4 데이터 백필
 
