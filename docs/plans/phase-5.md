@@ -105,6 +105,8 @@ returns table (
 
 #### 0016_shopping_list.sql
 
+> **Phase 4 0014 패턴 일관 (Architect 1.A SSoT)**: 본 SOURCE 블록은 table + index + RLS 4정책을 통합. drift checker (`pnpm web db:check-drift`)는 comment-stripped 비교이므로 .sql 파일의 헤더 주석은 무관.
+
 <!-- SOURCE: apps/web/supabase/migrations/0016_shopping_list.sql -->
 ```sql
 create type shopping_source as enum ('manual', 'recipe_gap');
@@ -123,13 +125,7 @@ create table shopping_list (
   created_at timestamptz not null default now()
 );
 create index shopping_list_user_active_idx on shopping_list(user_id) where bought = false;
-```
 
-### 2.3 RLS
-
-`shopping_list`는 사용자별 격리 (db-schema.md §4.1 패턴 적용):
-
-```sql
 alter table shopping_list enable row level security;
 create policy "shopping_list_select_own" on shopping_list
   for select using (auth.uid() = user_id);
@@ -140,6 +136,10 @@ create policy "shopping_list_update_own" on shopping_list
 create policy "shopping_list_delete_own" on shopping_list
   for delete using (auth.uid() = user_id);
 ```
+
+### 2.3 RLS
+
+→ §2.2 SOURCE 블록에 통합 (Phase 4 0014 패턴). 사용자별 격리 (`auth.uid() = user_id`) — db-schema.md §4.1 패턴 적용.
 
 ### 2.4 마이그레이션 적용 절차
 

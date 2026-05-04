@@ -2,6 +2,22 @@
 
 본 프로젝트의 모든 주요 변경 사항은 phase 단위로 본 파일에 기록한다. 형식: [Keep a Changelog](https://keepachangelog.com/) 약식.
 
+## [Unreleased] (Phase 5) — 장보기 브릿지 (진행 중, 2026-05-04~)
+
+### Day 0 — Pre-flight URL 검증 (chrome-devtools MCP 헤드리스)
+
+| 사이트 | 결과 | URL 패턴 | env 디폴트 |
+|---|---|---|---|
+| 쿠팡 | ⚠️ 헤드리스에서 anti-bot 차단 (`{"rCode":"RET9999"}`). URL 패턴은 표준 검색 endpoint이므로 실 사용자 브라우저에서는 정상 동작 가정 | `https://www.coupang.com/np/search?q={encoded}` | `NEXT_PUBLIC_COUPANG_ENABLED=true` |
+| 마켓컬리 | ✓ 검증 완료. "양파" 90 상품 / "삼겹살" 96 상품 노출. 자동 redirect `&page=1` 추가됨 | `https://www.kurly.com/search?sword={encoded}` | `NEXT_PUBLIC_KURLY_ENABLED=true` |
+| B마트 | ✗ 웹 검색 미지원. `https://www.baemin.com/search?query=양파` → 404. 본질적으로 앱 전용 서비스 (위치 기반) | (없음) | `NEXT_PUBLIC_BAEMIN_ENABLED=false` |
+
+→ `apps/web/.env.local` + `apps/web/.env.example`에 토글 3개 추가. `buildCommerceUrl.ts`는 토글 false 시 빈 문자열 반환 → UI에서 해당 deeplink 버튼 숨김.
+
+→ 사용자 액션: 실 브라우저(데스크톱/모바일)에서 쿠팡 URL 1회 직접 확인 권장. 차단되면 `NEXT_PUBLIC_COUPANG_ENABLED=false`로 토글.
+
+---
+
 ## v0.4.0 (Phase 4) — 요리 히스토리 + 듀얼 추천 (2026-05-04)
 
 > Phase 4 (Day 1-7) 통합 마일스톤. 7 commits 반영. PRD §2.4 핵심 가치 ("재료 클릭 → 과거/신규 레시피 병렬 표시") 충족.

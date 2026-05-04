@@ -1146,6 +1146,16 @@ create table shopping_list (
   created_at timestamptz not null default now()
 );
 create index shopping_list_user_active_idx on shopping_list(user_id) where bought = false;
+
+alter table shopping_list enable row level security;
+create policy "shopping_list_select_own" on shopping_list
+  for select using (auth.uid() = user_id);
+create policy "shopping_list_insert_own" on shopping_list
+  for insert with check (auth.uid() = user_id);
+create policy "shopping_list_update_own" on shopping_list
+  for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "shopping_list_delete_own" on shopping_list
+  for delete using (auth.uid() = user_id);
 ```
 
 #### 0017_barcode_cache.sql
