@@ -21,13 +21,22 @@ import type {
   RecipeIngredientRow,
   RecipeMaster,
 } from '@/entities/recipe/model/types';
+import type { UserIngredientForPayload } from '@/features/log-cooking-session/lib/build-consumed-payload';
 import { IngredientMatchBreakdown } from '@/features/view-recipe-match/ui/ingredient-match-breakdown';
+
+import { StartCookingButton } from './start-cooking-button';
 
 interface Props {
   recipe: RecipeMaster;
   recipeIngredients: RecipeIngredientRow[];
   recommendation: Recommendation;
-  ingredientNames?: Map<string, string>;
+  /** Day 6 — "요리 시작" 다이얼로그 차감 미리보기 + Server Action 입력용. RSC page 가 미리 fetch. */
+  userIngredients: UserIngredientForPayload[];
+  /**
+   * master_id → ingredient name. (Day 6 변경) "요리 시작" 다이얼로그 라벨용으로
+   * 항상 필요해 옵셔널 → 필수로 승격. RSC page 가 빈 Map (`new Map()`) 이라도 전달.
+   */
+  ingredientNames: Map<string, string>;
   youtubeVideoId?: string;
 }
 
@@ -41,14 +50,25 @@ export function RecipeDetail({
   recipe,
   recipeIngredients,
   recommendation,
+  userIngredients,
   ingredientNames,
   youtubeVideoId,
 }: Props) {
   return (
     <article className="flex flex-col gap-24 px-16 py-16">
-      {/* 헤더: 이름 + 설명 + 메타 */}
+      {/* 헤더: 이름 + 설명 + 메타 + "요리 시작" CTA (Day 6) */}
       <header className="flex flex-col gap-12">
-        <h1 className="text-heading-l text-gray-900">{recipe.name}</h1>
+        <div className="flex items-start justify-between gap-12">
+          <h1 className="text-heading-l text-gray-900">{recipe.name}</h1>
+          <div className="shrink-0">
+            <StartCookingButton
+              recipe={recipe}
+              recipeIngredients={recipeIngredients}
+              userIngredients={userIngredients}
+              ingredientNames={ingredientNames}
+            />
+          </div>
+        </div>
         {recipe.description && (
           <p className="text-body-s-400 text-gray-600">{recipe.description}</p>
         )}

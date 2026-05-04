@@ -145,10 +145,13 @@ export default async function RecipeDetailPage({ params }: PageProps) {
   };
 
   // ── 4. ingredient_master 이름 lookup Map ──────────────────────────────────
+  // Day 6: ingredientNames 는 RecipeDetail 의 "요리 시작" 다이얼로그 라벨용으로
+  // 항상 필요해 옵셔널 → 필수로 승격. lookup 실패 시 빈 Map 으로 fallback (라벨은
+  // master_id 그대로 표시되지만 다이얼로그 자체는 동작).
   const ingredientIds = Array.from(
     new Set(recipeIngredients.map((ri) => ri.ingredient_master_id)),
   );
-  let ingredientNames: Map<string, string> | undefined;
+  const ingredientNames = new Map<string, string>();
   if (ingredientIds.length > 0) {
     const { data: masterRows, error: mErr } = await untypedClient
       .from('ingredient_master')
@@ -157,11 +160,9 @@ export default async function RecipeDetailPage({ params }: PageProps) {
     if (mErr) {
       console.error('[recipe-detail] ingredient_master lookup failed', mErr);
     } else {
-      const map = new Map<string, string>();
       for (const row of (masterRows ?? []) as IngredientMasterNameRow[]) {
-        map.set(row.id, row.name);
+        ingredientNames.set(row.id, row.name);
       }
-      ingredientNames = map;
     }
   }
 
@@ -181,6 +182,10 @@ export default async function RecipeDetailPage({ params }: PageProps) {
       recipe={recipe}
       recipeIngredients={recipeIngredients}
       recommendation={recommendation}
+      // Day 6: "요리 시작" 다이얼로그 차감 미리보기 + Server Action 입력용.
+      // UserIngredientRow shape (위 §2 fetch) 와 UserIngredientForPayload shape
+      // 1:1 호환 (ingredient_master_id, expires_at, consumed, quantity).
+      userIngredients={userIngredients}
       ingredientNames={ingredientNames}
       youtubeVideoId={youtubeVideoId}
     />
