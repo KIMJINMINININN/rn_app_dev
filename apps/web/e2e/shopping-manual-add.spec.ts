@@ -63,9 +63,9 @@ test(
     // ── Step 2. /(app)/shopping 직접 이동 ────────────────────────────────
     await page.goto('/shopping', { waitUntil: 'domcontentloaded' });
 
-    // h1 "장보기 목록" 표시
+    // h1 "장바구니" 표시
     await expect(
-      page.getByRole('heading', { name: '장보기 목록', level: 1 }),
+      page.getByRole('heading', { name: '장바구니', level: 1 }),
     ).toBeVisible({ timeout: 30_000 });
 
     // ── Step 3. "항목 추가" 버튼 클릭 → AddShoppingDialog 열림 ────────────
@@ -201,14 +201,14 @@ test(
 
     await page.goto('/shopping', { waitUntil: 'domcontentloaded' });
 
-    // h1 "장보기 목록" 표시
+    // h1 "장바구니" 표시
     await expect(
-      page.getByRole('heading', { name: '장보기 목록', level: 1 }),
+      page.getByRole('heading', { name: '장바구니', level: 1 }),
     ).toBeVisible({ timeout: 30_000 });
 
     // 빈 상태 메시지: ShoppingList EmptyState
     await expect(
-      page.getByText(/장보기 항목이 없|아직 항목이 없/, { exact: false }),
+      page.getByText('장바구니가 비어있습니다', { exact: false }),
     ).toBeVisible({ timeout: 15_000 });
 
     // "항목 추가" 버튼은 빈 상태에서도 노출됨

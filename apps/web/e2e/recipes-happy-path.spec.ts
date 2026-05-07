@@ -59,7 +59,7 @@ async function goToInventory(
   await page.goto('/inventory', { waitUntil: 'domcontentloaded' });
   // 인벤토리 페이지 헤더 확인 (회귀 방지 — 인증 통과 여부 가드)
   await expect(
-    page.getByRole('heading', { name: '냉장고 재고', level: 1 }),
+    page.getByRole('heading', { name: '내 인벤토리', level: 1 }),
   ).toBeVisible({ timeout: 30_000 });
 }
 
@@ -88,9 +88,10 @@ async function addIngredient(
   await page.getByLabel('이름').fill(ingredientName);
 
   // 타입어헤드 결과 대기: 재료명 버튼 등장
+  // exact:true — "두부" 검색 시 "순두부" 부분일치 회피 (strict mode violation)
   const resultButton = page
     .getByRole('dialog')
-    .getByRole('button', { name: ingredientName });
+    .getByRole('button', { name: ingredientName, exact: true });
   await expect(resultButton).toBeVisible({ timeout: 10_000 });
   await resultButton.click();
 
@@ -116,13 +117,15 @@ test(
     // ── Step 2. 인벤토리 진입 + 재료 5개 추가 (김치찌개 매칭 재료 세트) ────
     await goToInventory(page);
 
-    // 0006 시드 기반 김치찌개 재료 5개
+    // 0006 시드 + 0012 김치찌개 재료 7개 (required 8 중 7 → score 0.7×0.875 = 0.6125, 임계값 0.5 통과)
     const ingredients = [
       '배추김치',
       '돼지고기 삼겹살',
       '두부',
       '대파',
       '마늘 다진것',
+      '고춧가루',
+      '국간장',
     ];
     for (const name of ingredients) {
       await addIngredient(page, name);

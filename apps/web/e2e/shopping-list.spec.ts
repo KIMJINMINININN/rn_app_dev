@@ -59,7 +59,7 @@ async function goToInventory(
 ): Promise<void> {
   await page.goto('/inventory', { waitUntil: 'domcontentloaded' });
   await expect(
-    page.getByRole('heading', { name: '냉장고 재고', level: 1 }),
+    page.getByRole('heading', { name: '내 인벤토리', level: 1 }),
   ).toBeVisible({ timeout: 30_000 });
 }
 
@@ -82,9 +82,10 @@ async function addIngredient(
   await page.getByLabel('이름').fill(ingredientName);
 
   // 타입어헤드 결과 대기: 재료명 버튼 등장
+  // exact:true — "두부" 검색 시 "순두부" 부분일치 회피 (strict mode violation)
   const resultButton = page
     .getByRole('dialog')
-    .getByRole('button', { name: ingredientName });
+    .getByRole('button', { name: ingredientName, exact: true });
   await expect(resultButton).toBeVisible({ timeout: 10_000 });
   await resultButton.click();
 
@@ -110,8 +111,16 @@ test(
     // ── Step 2. 인벤토리 진입 + 재료 일부 추가 (김치찌개 재료 중 일부만 — 부족 재료 발생 목적) ──
     await goToInventory(page);
 
-    // 0006 시드 기반 김치찌개 재료 세트 중 일부만 추가 (부족 재료가 생기도록)
-    const ingredients = ['배추김치', '돼지고기 삼겹살'];
+    // 0006 시드 + 0012 김치찌개 재료 7개 (score 0.6125 → 카드 노출. required 1개 + optional 2개 부족으로 "담기" 검증 가능)
+    const ingredients = [
+      '배추김치',
+      '돼지고기 삼겹살',
+      '두부',
+      '대파',
+      '마늘 다진것',
+      '고춧가루',
+      '국간장',
+    ];
     for (const name of ingredients) {
       await addIngredient(page, name);
     }
@@ -154,9 +163,9 @@ test(
     // ── Step 5. /(app)/shopping 이동 ─────────────────────────────────────
     await page.goto('/shopping', { waitUntil: 'domcontentloaded' });
 
-    // h1 "장보기 목록"
+    // h1 "장바구니"
     await expect(
-      page.getByRole('heading', { name: '장보기 목록', level: 1 }),
+      page.getByRole('heading', { name: '장바구니', level: 1 }),
     ).toBeVisible({ timeout: 30_000 });
 
     // ── Step 6. ShoppingItemRow 노출 검증 (적어도 1개) ────────────────────
@@ -169,21 +178,11 @@ test(
     const emptyCount = await emptyMsg.count();
     expect(emptyCount).toBe(0);
 
-    // 장보기 item row 1개 이상: checkbox role 또는 listitem
-    // ShoppingItemRow는 체크박스(role="checkbox")를 포함하는 row
-    const shoppingItems = page.locator('[role="listitem"], li').filter({
-      has: page.locator('[role="checkbox"]'),
+    // 장보기 item row 1개 이상 노출 대기 — ShoppingItemRow는 checkbox + 삭제 버튼 포함
+    // Playwright는 locator를 자동으로 wait — count() 즉시 호출 X, getByRole().first() + toBeVisible 사용
+    await expect(page.getByRole('checkbox').first()).toBeVisible({
+      timeout: 15_000,
     });
-    // 체크박스가 없는 경우 대비 — 텍스트 기반으로도 확인
-    const checkboxes = page.locator('[role="checkbox"]');
-    const checkboxCount = await checkboxes.count();
-    // 장보기 row가 1개 이상 있어야 함
-    if (checkboxCount > 0) {
-      await expect(checkboxes.first()).toBeVisible({ timeout: 10_000 });
-    } else {
-      // 최소한 ShoppingItemRow가 article/div로 렌더되는 경우
-      await expect(shoppingItems.first()).toBeVisible({ timeout: 10_000 });
-    }
 
     // ── Step 7. 커머스 deeplink 클릭 → 새 탭 열림 검증 ─────────────────────
     // CommerceLinkMenu: NEXT_PUBLIC_COUPANG_ENABLED=true → 쿠팡 링크 버튼 노출
