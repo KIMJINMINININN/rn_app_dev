@@ -14,7 +14,7 @@
 -- RLS 정책 (phase-4.md §2.3 + db-schema §4.1):
 --   - cooking_history: 사용자별 격리 (auth.uid() = user_id)
 --   - cooking_history_consumed_ingredients: 별도 RLS 불필요
---     (cooking_history FK cascade로 격리, RPC 통해서만 write — 0015b log_cooking_session)
+--     (cooking_history FK cascade로 격리, RPC 통해서만 write — 0019 log_cooking_session)
 
 create table cooking_history (
   id uuid primary key default gen_random_uuid(),

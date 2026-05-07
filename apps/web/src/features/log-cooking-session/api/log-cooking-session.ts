@@ -3,11 +3,11 @@
 // apps/web/src/features/log-cooking-session/api/log-cooking-session.ts
 // Phase 4 §3.2 / §4.1 — features/log-cooking-session Server Action.
 //
-// `log_cooking_session` (0015b RPC) 단일 호출로 cooking_history INSERT +
-// user_ingredients 부분 차감을 원자적으로 수행한다. 본 파일은 RPC 호출 + 권한
-// 검증 + 한국어 에러 변환 + revalidatePath만 담당한다.
+// `log_cooking_session` (0019 RPC, 원래 0015b — supabase CLI 호환 위해 rename)
+// 단일 호출로 cooking_history INSERT + user_ingredients 부분 차감을 원자적으로
+// 수행한다. 본 파일은 RPC 호출 + 권한 검증 + 한국어 에러 변환 + revalidatePath만 담당.
 //
-// ★ Database 자동 생성 타입(`db:types`)에 0014 / 0015b 객체가 아직 없어
+// ★ Database 자동 생성 타입(`db:types`)에 0014 / 0019 객체가 아직 없어
 //   호출 사이트에서 untyped supabase client 캐스트를 사용한다 (Phase 3 Day 7
 //   `recipes/page.tsx`, list-recommendations queries.ts 와 동일 패턴).
 //
@@ -71,7 +71,7 @@ export async function logCookingSession(
   });
 
   if (error) {
-    // 0015b 본문: `raise exception 'unauthorized: auth.uid() mismatch'`
+    // 0019 본문: `raise exception 'unauthorized: auth.uid() mismatch'`
     if (
       typeof error.message === 'string' &&
       error.message.includes('unauthorized: auth.uid() mismatch')

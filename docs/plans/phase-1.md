@@ -509,10 +509,10 @@ $$;
 -- 트리거는 0002에서 생성된 on_auth_user_created 그대로 사용 (재생성 X)
 ```
 
-#### 0008b_search_ingredient_masters.sql
+#### 0017_search_ingredient_masters.sql
 
-<!-- SOURCE: apps/web/supabase/migrations/0008b_search_ingredient_masters.sql -->
-<!-- SSoT: docs/plans/db-schema.md §3.2 0008b -->
+<!-- SOURCE: apps/web/supabase/migrations/0017_search_ingredient_masters.sql -->
+<!-- SSoT: docs/plans/db-schema.md §3.2 0017 -->
 ```sql
 -- ───────── search_ingredient_masters: 한국어 typeahead RPC ─────────
 -- ILIKE prefix(rank 1.0) + ILIKE 부분(0.7) + similarity(trigram) hybrid

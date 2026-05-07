@@ -1,7 +1,7 @@
 // apps/web/src/features/log-cooking-session/lib/build-consumed-payload.ts
 // Phase 4 §4.4 — recipe_ingredients + user_ingredients → consumed jsonb shape.
 //
-// 결과 shape는 0015b `log_cooking_session(p_consumed jsonb)` 인자와 1:1 매칭:
+// 결과 shape는 0019 `log_cooking_session(p_consumed jsonb)` 인자와 1:1 매칭:
 //   [{ "master_id": "<uuid>", "quantity": <numeric>, "unit": "<text>" }]
 //
 // 정책 (phase-4.md §4.4 + Architect 결정):

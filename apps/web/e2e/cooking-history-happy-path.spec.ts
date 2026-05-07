@@ -2,7 +2,7 @@
 // Phase 4 §6.3 — E2E: cooking-history happy path
 //
 // ⚠️ 실제 실행 전제 조건:
-//   - supabase local (Docker) 가동 + 마이그레이션 0014/0015a/0015b 적용
+//   - supabase local (Docker) 가동 + 마이그레이션 0014/0018/0019 적용
 //   - cooking_history / cooking_history_consumed_ingredients 테이블 존재
 //   - logCookingSession Server Action 동작
 //   - pnpm dev 서버 port 3100 구동

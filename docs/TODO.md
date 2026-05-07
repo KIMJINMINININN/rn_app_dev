@@ -260,18 +260,19 @@ c88dde7 feat(phase-5): Day 1 — Pre-flight URL 검증 + 0016_shopping_list (tab
 
 ## 7. 산출물 요약 (지금까지)
 
-### DB 마이그레이션 17개 + seed 1 (apps/web/supabase/migrations/)
-- 0001~0010 (Phase 0+1+2 — 인벤토리 핵심)
+### DB 마이그레이션 18개 + seed 1 (apps/web/supabase/migrations/)
+- 0001~0010 (Phase 0+1+2 — 인벤토리 핵심). **0008b는 supabase CLI 비호환 → 0017로 rename**
 - 0011 recipe_master + recipe_ingredients + recipe_difficulty enum + recommend_recipes RPC + RLS (Phase 3)
 - 0012 시드 100선 / 707 재료 매핑 (auto-generated, recipes_to_sql.mjs)
 - 0013 youtube_cache + RLS read-only (Phase 3)
 - 0014 cooking_history + cooking_history_consumed_ingredients + RLS 4정책 + 인덱스 (Phase 4)
-- 0015a recommend_for_ingredient RPC (듀얼 추천) (Phase 4)
-- 0015b log_cooking_session plpgsql 원자 트랜잭션 RPC (Phase 4)
 - **0016 shopping_list + shopping_source enum + 부분 index + RLS 4정책** (Phase 5)
+- 0017 search_ingredient_masters RPC (Phase 1, 원래 0008b — rename)
+- 0018 recommend_for_ingredient RPC 듀얼 추천 (Phase 4, 원래 0015a — rename)
+- 0019 log_cooking_session plpgsql 원자 트랜잭션 RPC (Phase 4, 원래 0015b — rename)
 
 ### Phase 6 신규 예정 (phase-6.md 참조)
-- 0017+ barcode_cache / receipt_uploads + RLS + RPC
+- 0020+ barcode_cache / receipt_uploads + RLS + RPC
 
 ### 기능 (사용자 관점, Phase 0~5 누적)
 - 가입/로그인/로그아웃

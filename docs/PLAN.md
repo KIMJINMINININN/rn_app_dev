@@ -113,12 +113,12 @@ PRD `docs/PRD.md`의 5개 핵심 기능 (인벤토리 / OCR·바코드 입력 / 
 |---|---|---|
 | [phase-0a.md](./plans/phase-0a.md) | 0001, 0002 | supabase init + types codegen + Result 헬퍼 + (app) 라우트 그룹 |
 | [phase-0b.md](./plans/phase-0b.md) | (없음) | primitives 7종 + AppShell + Vitest/Playwright + Lefthook |
-| [phase-1.md](./plans/phase-1.md) ★ | 0003-0008b | 인벤토리 CRUD + computeDDay + 한국어 typeahead |
+| [phase-1.md](./plans/phase-1.md) ★ | 0003-0008, 0017 | 인벤토리 CRUD + computeDDay + 한국어 typeahead (0017은 원래 0008b — supabase CLI 호환 위해 rename) |
 | [phase-2.md](./plans/phase-2.md) | 0009, 0010 | 정렬/필터/이동/소진 + auto_consume 트리거 + inventory_summary |
 | [phase-3.md](./plans/phase-3.md) ★ | 0011, 0012, 0013 | recipe_master 100선 + recommend_recipes + YouTube cache |
-| [phase-4.md](./plans/phase-4.md) | 0014, 0015a, 0015b | cooking_history + recommend_for_ingredient + log_cooking_session |
+| [phase-4.md](./plans/phase-4.md) | 0014, 0018, 0019 | cooking_history + recommend_for_ingredient + log_cooking_session (0018/0019는 원래 0015a/b — supabase CLI 호환 위해 rename) |
 | [phase-5.md](./plans/phase-5.md) | 0016 | shopping_list + 부족 재료 추출 + 커머스 deeplink |
-| [phase-6.md](./plans/phase-6.md) | 0017, 0018 | 바코드 cache + receipt OCR (ML Kit + Clova) |
+| [phase-6.md](./plans/phase-6.md) | 0020+ | 바코드 cache + receipt OCR (ML Kit + Clova) |
 
 ---
 

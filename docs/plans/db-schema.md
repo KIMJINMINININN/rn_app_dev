@@ -549,9 +549,9 @@ $$;
 -- 트리거는 0002에서 생성된 on_auth_user_created 그대로 사용 (재생성 X)
 ```
 
-#### 0008b_search_ingredient_masters.sql
+#### 0017_search_ingredient_masters.sql
 
-<!-- SOURCE: apps/web/supabase/migrations/0008b_search_ingredient_masters.sql -->
+<!-- SOURCE: apps/web/supabase/migrations/0017_search_ingredient_masters.sql -->
 ```sql
 -- ───────── search_ingredient_masters: 한국어 typeahead RPC ─────────
 -- ILIKE prefix(rank 1.0) + ILIKE 부분(0.7) + similarity(trigram) hybrid
@@ -964,9 +964,9 @@ create policy "cooking_history_delete_own" on cooking_history
 -- 별도 RLS 정책 불필요 (직접 접근 없음, RPC 통해서만 write — log_cooking_session에서)
 ```
 
-#### 0015a_recommend_for_ingredient.sql
+#### 0018_recommend_for_ingredient.sql
 
-<!-- SOURCE: apps/web/supabase/migrations/0015a_recommend_for_ingredient.sql -->
+<!-- SOURCE: apps/web/supabase/migrations/0018_recommend_for_ingredient.sql -->
 ```sql
 -- ───────── recommend_for_ingredient: 인벤토리에서 재료 클릭 시 듀얼 추천 ─────────
 -- past_recipes: 사용자가 과거에 만든 적 있는 레시피 중 이 재료를 사용한 것
@@ -1030,9 +1030,9 @@ grant execute on function public.recommend_for_ingredient(uuid, uuid, int)
   to authenticated;
 ```
 
-#### 0015b_log_cooking_session.sql
+#### 0019_log_cooking_session.sql
 
-<!-- SOURCE: apps/web/supabase/migrations/0015b_log_cooking_session.sql -->
+<!-- SOURCE: apps/web/supabase/migrations/0019_log_cooking_session.sql -->
 ```sql
 -- ───────── log_cooking_session: 요리 기록 + 재료 차감 (atomic) ─────────
 -- consumed jsonb shape:
