@@ -57,7 +57,11 @@
 ---
 
 ## 🔧 도구 (아무 때나)
-- [ ] 이 브랜치에 **lefthook + gitleaks** 셋업 (템플릿엔 없음 → 커밋 시 시크릿 보호 복구)
+- [ ] **lefthook + gitleaks 시크릿 보호 복구** (Develop §3.3) — *조사 끝, 구현만 남음 (2026-05-30):*
+  - gitleaks `8.30.1` brew 설치됨 ✅. **`protect`는 레거시 → `gitleaks git --staged --no-banner --redact` 사용.**
+  - `.git/hooks/pre-commit`에 lefthook shim은 있으나 **lefthook 미선언**(pnpm dlx 캐시 경로 의존=취약) + **`lefthook.yml` 없음** → 매 커밋 "config 없음" 후 무동작.
+  - 할 일: ① 루트 `pnpm add -D -w lefthook` ② 루트 `lefthook.yml`(pre-commit→gitleaks) ③ 루트 `.gitleaks.toml`(`[extend] useDefault=true` + allowlist `docs/`·`pnpm-lock\.yaml`) ④ `pnpm exec lefthook install` 훅 재생성.
+  - 검증: 가짜 시크릿 여러 포맷 staged→차단(exit 1) / `.env.example` placeholder·정상파일→통과. (config 자동탐지: `(target)/.gitleaks.toml`.) GitHub push protection ON은 인프라.
 
 ## 🟥 인프라 — **맨 마지막에 몰아서** — Develop §13
 - [ ] `supabase init` + `config.toml` (bucket `training-media`, `file_size_limit` 등 §4.1)
