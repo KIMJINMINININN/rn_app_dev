@@ -13,6 +13,7 @@
 - [x] 냉장고 도메인 분리 확인 (이 브랜치는 깨끗한 템플릿 — 앱 셸+스타일만 추적)
 - [x] **1. Tailwind red/black/white 재테마** + 다크모드/belt/discipline 토큰 — `tailwind-theme.css` `f1c2567` (build ✅)
 - [x] **2. Supabase 클라이언트 토대** `shared/api/supabase/{server,client,admin,index,types}` + db 스크립트 5종 + `.env.example` — (build·typecheck ✅, DB 미적용)
+- [x] **3. entity 슬라이스 6종** rank(+BeltBadge)·technique(+CategoryChip)·session·media(+youtube)·tag(+TagChip)·discipline(+DisciplineChip) + 공용 `shared/lib/zod.ts` + 테마 dark variant — 적대적 리뷰+architect APPROVED, build·typecheck ✅ (api/ 쿼리는 인프라 단계)
 
 ---
 
@@ -32,10 +33,13 @@
 - [x] `types.ts` placeholder (인프라 단계 `db:types`가 덮어씀)
 - ↪ 후속: `src/proxy.ts` 미들웨어(세션 갱신)는 인증(5번)에서
 
-### 3. 나머지 entity 슬라이스 — Develop §6.1
-- [ ] `entities/rank`(model + **BeltBadge** ui) · `entities/technique`(model+zod + CategoryChip)
-- [ ] `entities/session`(model+zod) · `entities/media`(youtube URL→id 파싱) · `entities/tag`(TagPill)
-- [ ] 시그니처 컴포넌트 **BeltBadge·DisciplineChip·TagChip** — Design §6 스펙 그대로
+### 3. ✅ entity 슬라이스 — Develop §6.1  *(완료)*
+- [x] `entities/rank`(UserRank model + **BeltBadge** ui) · `entities/technique`(model+zod + CategoryChip + category-meta)
+- [x] `entities/session`(model+zod, session_disciplines N:M) · `entities/media`(model + youtube URL→id 파싱) · `entities/tag`(model + **TagChip**)
+- [x] 시그니처 컴포넌트 **BeltBadge·DisciplineChip·TagChip**(+ CategoryChip) — Design §6 스펙 반영
+- [x] 공용 `shared/lib/zod.ts`(isoTimestamp) + 테마 `@custom-variant dark`/belt-dark 토큰 보강
+- ↪ 후속(인프라/이후): 각 슬라이스 `api/`(supabase 쿼리), `entities/technique` PositionChip·TechniqueCard, `entities/session` lib/ui, `entities/media` ui(MediaThumb/VideoPlayer)
+- ↪ 네이밍 결정: Design §6 기준 `DisciplineChip`/`TagChip` 사용(Develop의 DisciplineBadge/TagPill 별칭 통일)
 
 ### 4. 앱 셸 + 내비 + 글로벌 검색바 — IA(PRD §7) / Design §7
 - [ ] `widgets/app-shell` (캘린더·기술·검색·프로필 + 상단 검색바 + 빠른추가 FAB)
