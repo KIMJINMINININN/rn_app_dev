@@ -7,10 +7,17 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "db:start": "supabase start",
+    "db:push": "supabase db push --linked",
+    "db:types": "supabase gen types typescript --linked > src/shared/api/supabase/types.ts",
+    "db:reset": "supabase db reset",
+    "db:diff": "supabase db diff -f"
   },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",
+    "@supabase/ssr": "^0.10.3",
+    "@supabase/supabase-js": "^2.106.2",
     "@tanstack/react-query": "^5.100.1",
     "@the-others/webview-protocol": "workspace:*",
     "axios": "1.15.2",
