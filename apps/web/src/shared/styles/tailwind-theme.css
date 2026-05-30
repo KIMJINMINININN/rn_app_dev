@@ -7,94 +7,79 @@
   }
 }
 
+/* =============================================================================
+   MMA 트레이닝 저널 — Red / Black / White 재테마
+   SSoT: docs/mma/Design.md §2 (컬러) · §4 (스페이싱/엘리베이션/모션)
+   - 3-Tier 색 모델: Brand·Neutral(빨강 신호) / Belt(정보) / Discipline(정보)
+   - 빨강 = 항상 액션·주의·오늘. 종목/벨트 색은 빨강 계열 회피.
+   ========================================================================== */
 @theme {
-  /* Reset - Tailwind CSS v4에서 기본적으로 제공하는 테마 변수를 초기화 */
+  /* Reset — Tailwind CSS v4 기본 테마 변수를 초기화 */
   --color-*: initial;
   --font-*: initial;
   --text-*: initial;
   --font-weight-*: initial;
   --radius-*: initial;
 
-  /* Font Family */
+  /* Font Family (유지) */
   --font-pretendard: "Pretendard", sans-serif;
 
-  /* Gray */
-  --color-gray-900: #292929;
-  --color-gray-800: #353a3f;
-  --color-gray-700: #575e64;
-  --color-gray-600: #6e757c;
-  --color-gray-500: #8c939a;
-  --color-gray-400: #acb3ba;
-  --color-gray-300: #cfd4d9;
-  --color-gray-200: #dee2e6;
-  --color-gray-100: #ecf0f4;
-  --color-gray-50: #f4f6fa;
-  --color-gray-025: #f7fbff;
-
-  /* Primary */
-  --color-primary-900: #0a2f75;
-  --color-primary-800: #0d3e9b;
-  --color-primary-700: #114dc0;
-  --color-primary-600: #145ce6;
-  --color-primary-500: #3574ed;
-  --color-primary-400: #5b8ef1;
-  --color-primary-300: #80a8f4;
-  --color-primary-200: #b2caf8;
-  --color-primary-100: #cfdefb;
-  --color-primary-50: #e9f1ff;
-
-  /* Red */
-  --color-red-900: #9b0d0d;
-  --color-red-800: #c01111;
-  --color-red-700: #e61414;
-  --color-red-600: #ed3535;
-  --color-red-500: #f15b5b;
-  --color-red-400: #f48080;
-  --color-red-300: #f7a6a6;
-  --color-red-200: #ffcfcf;
-  --color-red-100: #fdecec;
-
-  /* Yellow */
-  --color-yellow-600: #eeab00;
-  --color-yellow-500: #ffcc00;
-  --color-yellow-400: #ffd633;
-  --color-yellow-300: #ffe066;
-  --color-yellow-200: #fff0b3;
-  --color-yellow-100: #fff7d9;
-
-  /* Green */
-  --color-green-600: #009645;
-  --color-green-500: #0cb459;
-  --color-green-400: #31d17b;
-  --color-green-300: #71e6a7;
-  --color-green-200: #b1f2cf;
-  --color-green-100: #e4fbea;
-
-  /* Teal */
-  --color-teal-600: #0f88c8;
-  --color-teal-500: #00afe5;
-  --color-teal-400: #29d1ff;
-  --color-teal-300: #7fe3ff;
-  --color-teal-200: #a9edff;
-  --color-teal-100: #e4f9ff;
-
-  /* Purple */
-  --color-purple-600: #6b3cc9;
-  --color-purple-500: #8556e3;
-  --color-purple-400: #a17df5;
-  --color-purple-300: #bd9ff5;
-  --color-purple-200: #d4c4f5;
-  --color-purple-100: #f5ebff;
-
-  /* Neutral */
+  /* ---- Neutral: Black → White (Design §2.3) ---- */
   --color-white: #ffffff;
+  --color-gray-025: #fafafa;
+  --color-gray-50: #f4f4f5;
+  --color-gray-100: #e9e9ec;
+  --color-gray-200: #d7d7dc;
+  --color-gray-300: #bcbcc4;
+  --color-gray-400: #9a9aa3;
+  --color-gray-500: #71717a;
+  --color-gray-600: #52525b;
+  --color-gray-700: #3f3f46;
+  --color-gray-800: #27272a;
+  --color-gray-900: #18181b;
+  --color-gray-950: #101012;
   --color-black: #000000;
   --color-black-30: #0000004d;
 
-  /* Spacing */
+  /* ---- Red = Brand Primary (Design §2.2) — primary `#e11d2a` 옥타곤 레드 ---- */
+  --color-red-50: #fff1f2;
+  --color-red-100: #ffe0e2;
+  --color-red-200: #fcc0c4;
+  --color-red-300: #f88a91;
+  --color-red-400: #f25761;
+  --color-red-500: #e11d2a; /* PRIMARY — 버튼/오늘/활성/링크 */
+  --color-red-600: #c2151f;
+  --color-red-700: #9e0f18;
+  --color-red-800: #7a0c13;
+  --color-red-900: #5c080e;
+
+  /* ---- Status (semantic raw) (Design §2.4) ---- */
+  --color-success-600: #15803d;
+  --color-success-400: #34d399;
+  --color-warning-600: #b45309;
+  --color-warning-400: #fbbf24;
+
+  /* ---- Domain: Belt (Design §2.5) ---- */
+  --color-belt-white: #ffffff;
+  --color-belt-blue: #1d4ed8;
+  --color-belt-purple: #6d28d9;
+  --color-belt-brown: #6b4226;
+  --color-belt-black: #18181b;
+  --color-belt-stripe: #ffffff; /* 기본 stripe (검정/유색 벨트) */
+  --color-belt-stripe-onwhite: #18181b; /* 흰띠 stripe */
+  --color-belt-stripe-onblack: #e11d2a; /* 흑띠 적색 바 */
+
+  /* ---- Domain: Discipline · light 기준 (Design §2.6 / discipline-meta.ts) ---- */
+  --color-disc-bjj-gi: #1d4ed8;
+  --color-disc-bjj-nogi: #0e7490;
+  --color-disc-wrestling: #b45309;
+  --color-disc-striking: #c2410c;
+  --color-disc-mma: #5b21b6;
+
+  /* Spacing 기준 (유지) */
   --spacing: 1px;
 
-  /* Border Radius */
+  /* Border Radius (유지) */
   --radius-xxs: 6px;
   --radius-xs: 8px;
   --radius-s: 10px;
@@ -102,6 +87,107 @@
   --radius-l: 16px;
   --radius-xl: 20px;
   --radius-xxl: 24px;
+
+  /* ---- Elevation / Shadow (Design §4.3) — 중립(검정 기반) ---- */
+  --shadow-e1: 0 1px 2px 0 rgb(0 0 0 / 0.06);
+  --shadow-e2: 0 2px 8px -1px rgb(0 0 0 / 0.1);
+  --shadow-e3: 0 8px 24px -4px rgb(0 0 0 / 0.14);
+  --shadow-e4: 0 16px 48px -8px rgb(0 0 0 / 0.2);
+
+  /* ---- Focus ring (Design §2.7) ---- */
+  --ring-focus: 0 0 0 3px rgb(225 29 42 / 0.4);
+
+  /* ---- Motion (Design §4.4) ---- */
+  --duration-instant: 80ms;
+  --duration-fast: 140ms;
+  --duration-base: 200ms;
+  --duration-slow: 300ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-emphasized: cubic-bezier(0.2, 0, 0, 1.2);
+}
+
+/* =============================================================================
+   Semantic Alias 레이어 (Design §2.4 / §2.8)
+   @theme는 정적이므로 의미 토큰은 :root / [data-theme]에 두어 런타임 토글.
+   컴포넌트는 raw 색이 아니라 이 의미 토큰을 참조한다.
+   ⚠️ dark 값을 수정하면 아래 @media(prefers-color-scheme) 블록도 함께 동기화할 것.
+   ========================================================================== */
+:root,
+:root[data-theme="light"] {
+  --surface-app: var(--color-gray-025);
+  --surface-base: var(--color-white);
+  --surface-raised: var(--color-white);
+  --surface-sunken: var(--color-gray-50);
+  --text-strong: var(--color-gray-900);
+  --text-default: var(--color-gray-800);
+  --text-muted: var(--color-gray-500);
+  --text-disabled: var(--color-gray-400);
+  --text-on-primary: var(--color-white);
+  --border-default: var(--color-gray-200);
+  --border-strong: var(--color-gray-300);
+  --border-subtle: var(--color-gray-100);
+  --primary: var(--color-red-500);
+  --primary-hover: var(--color-red-600);
+  --primary-active: var(--color-red-700);
+  --primary-soft: var(--color-red-50);
+  --danger: var(--color-red-600);
+  --success: var(--color-success-600);
+  --warning: var(--color-warning-600);
+  --shadow-card: var(--shadow-e2);
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --surface-app: var(--color-gray-950);
+  --surface-base: var(--color-gray-900);
+  --surface-raised: var(--color-gray-800);
+  --surface-sunken: #0c0c0e;
+  --text-strong: var(--color-white);
+  --text-default: var(--color-gray-100);
+  --text-muted: var(--color-gray-400);
+  --text-disabled: var(--color-gray-600);
+  --text-on-primary: var(--color-white);
+  --border-default: var(--color-gray-700);
+  --border-strong: var(--color-gray-600);
+  --border-subtle: var(--color-gray-800);
+  --primary: var(--color-red-500);
+  --primary-hover: var(--color-red-400);
+  --primary-active: var(--color-red-300);
+  --primary-soft: var(--color-red-900);
+  --danger: var(--color-red-400);
+  --success: var(--color-success-400);
+  --warning: var(--color-warning-400);
+  /* dark에서는 그림자 약화 + 상단 1px 하이라이트로 입체 표현 */
+  --shadow-card: 0 1px 0 0 rgb(255 255 255 / 0.04), 0 2px 12px -2px rgb(0 0 0 / 0.6);
+  color-scheme: dark;
+}
+
+/* OS 선호 자동 적용 (사용자가 data-theme를 명시하지 않은 경우)
+   — 위 [data-theme="dark"] 블록과 동일 값 (동기화 유지) */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --surface-app: var(--color-gray-950);
+    --surface-base: var(--color-gray-900);
+    --surface-raised: var(--color-gray-800);
+    --surface-sunken: #0c0c0e;
+    --text-strong: var(--color-white);
+    --text-default: var(--color-gray-100);
+    --text-muted: var(--color-gray-400);
+    --text-disabled: var(--color-gray-600);
+    --text-on-primary: var(--color-white);
+    --border-default: var(--color-gray-700);
+    --border-strong: var(--color-gray-600);
+    --border-subtle: var(--color-gray-800);
+    --primary: var(--color-red-500);
+    --primary-hover: var(--color-red-400);
+    --primary-active: var(--color-red-300);
+    --primary-soft: var(--color-red-900);
+    --danger: var(--color-red-400);
+    --success: var(--color-success-400);
+    --warning: var(--color-warning-400);
+    --shadow-card: 0 1px 0 0 rgb(255 255 255 / 0.04), 0 2px 12px -2px rgb(0 0 0 / 0.6);
+    color-scheme: dark;
+  }
 }
 
 /* Typography Utilities */
