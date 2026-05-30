@@ -7,6 +7,20 @@
   }
 }
 
+/* dark variant — [data-theme="dark"] 명시 토글이 주 메커니즘(Design §2.8).
+   data-theme 미지정 시 OS prefers-color-scheme:dark도 함께 지원.
+   ⚠️ :root semantic alias 분기 로직(아래)과 정확히 일치시킬 것. */
+@custom-variant dark {
+  &:where([data-theme="dark"], [data-theme="dark"] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-theme]), :root:not([data-theme]) *) {
+      @slot;
+    }
+  }
+}
+
 /* =============================================================================
    MMA 트레이닝 저널 — Red / Black / White 재테마
    SSoT: docs/mma/Design.md §2 (컬러) · §4 (스페이싱/엘리베이션/모션)
@@ -63,7 +77,9 @@
   --color-belt-white: #ffffff;
   --color-belt-blue: #1d4ed8;
   --color-belt-purple: #6d28d9;
+  --color-belt-purple-dark: #7c3aed;
   --color-belt-brown: #6b4226;
+  --color-belt-brown-dark: #7c4f30;
   --color-belt-black: #18181b;
   --color-belt-stripe: #ffffff; /* 기본 stripe (검정/유색 벨트) */
   --color-belt-stripe-onwhite: #18181b; /* 흰띠 stripe */
