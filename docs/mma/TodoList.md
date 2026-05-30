@@ -11,22 +11,26 @@
 - [x] DB 마이그레이션 `supabase/migrations/0001~0015` (테이블 10·enum 9·RLS·뷰·RPC·storage·시드) — `bf6df72` *(파일만, DB 미적용)*
 - [x] enum 단일출처 `shared/model/enums.ts` + `entities/discipline`(메타·rank_track 매핑) — `3cab6fa` (typecheck ✅)
 - [x] 냉장고 도메인 분리 확인 (이 브랜치는 깨끗한 템플릿 — 앱 셸+스타일만 추적)
+- [x] **1. Tailwind red/black/white 재테마** + 다크모드/belt/discipline 토큰 — `tailwind-theme.css` `f1c2567` (build ✅)
+- [x] **2. Supabase 클라이언트 토대** `shared/api/supabase/{server,client,admin,index,types}` + db 스크립트 5종 + `.env.example` — (build·typecheck ✅, DB 미적용)
 
 ---
 
 ## ▶ 다음 시작점 (추천 순서)
 각 항목 독립 커밋 가능. **1번(테마)·2번(토대)은 DB 없이 바로 가능.**
 
-### 1. Tailwind 흑·백·빨 재테마  — Design.md §2  *(DB 독립, 빠른 시각 성과)*
-- [ ] `apps/web/src/shared/styles/tailwind-theme.css` @theme를 red/black/white로 교체 (Design §2.2~2.4 HEX 그대로, primary `#E11D2A`)
-- [ ] 다크모드 토큰 + `[data-theme]` 스위칭 (Design §2.4)
-- [ ] 벨트색·종목색 CSS 변수 추가 (Design §2.5/2.6) — `discipline-meta.ts` 색과 일치
+### 1. ✅ Tailwind 흑·백·빨 재테마  — Design.md §2  *(완료 `f1c2567`)*
+- [x] `tailwind-theme.css` @theme를 red/black/white로 교체 (primary `#E11D2A`)
+- [x] 다크모드 토큰 + `[data-theme]` 스위칭 + OS 자동(`prefers-color-scheme`)
+- [x] 벨트색(8)·종목색(5) CSS 변수 — `discipline-meta.ts`와 일치
+- ↪ 후속: `app/layout.tsx` `<html>`에 `data-theme` 주입 + FOUC 스크립트 → 앱 셸/F1(4·5번)
 
-### 2. Supabase 클라이언트 + 타입 토대  — Develop §6/§6b/§4.7  *(파일만)*
-- [ ] `shared/api/supabase/{server,client,admin}.ts` 스캐폴드
-- [ ] `apps/web/package.json`에 db 스크립트 (db:start/push/types/reset/diff)
-- [ ] `apps/web/.env.example`에 키 추가 (Supabase / YouTube API / Storage 한도 / E2E)
-- [ ] `shared/api/supabase/types.ts` placeholder (실제 생성은 인프라 단계 `db:types`)
+### 2. ✅ Supabase 클라이언트 + 타입 토대  — Develop §6/§6b/§4.7  *(완료)*
+- [x] `shared/api/supabase/{server,client,admin,index,types}.ts` 스캐폴드 (server/admin은 `server-only`)
+- [x] `package.json` db 스크립트 5종 (start/push/types/reset/diff) + `@supabase/ssr`·`supabase-js`
+- [x] `.env.example` (Supabase/YouTube/Storage/e2e, 전부 placeholder, `!.env.example` 예외)
+- [x] `types.ts` placeholder (인프라 단계 `db:types`가 덮어씀)
+- ↪ 후속: `src/proxy.ts` 미들웨어(세션 갱신)는 인증(5번)에서
 
 ### 3. 나머지 entity 슬라이스 — Develop §6.1
 - [ ] `entities/rank`(model + **BeltBadge** ui) · `entities/technique`(model+zod + CategoryChip)
