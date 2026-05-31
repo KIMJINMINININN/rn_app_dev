@@ -1,9 +1,12 @@
+import { SignupForm } from './signup-form';
+
 /**
- * 회원가입 (F1 / Develop §6.4) — 인프라 연결 전 셸.
+ * 회원가입 (F1 / Develop §6.4 / §10).
  *
  * (auth) 그룹은 AppShell 크롬 없이 중앙 정렬 단일 화면.
- * TODO(F1): signup-form.tsx(client) + (auth)/actions.ts의 signup Server Action 연결(Supabase).
- *   지금은 폼/서버액션 없이 자리만(인프라 last 제약).
+ * 폼 상호작용은 client(<SignupForm/>) + signup Server Action((auth)/actions.ts)이 담당.
+ * profiles 행은 DB handle_new_user() 트리거가 자동 생성하므로 여기서 insert하지 않는다.
+ * 인증 미연결 단계(NEXT_PUBLIC_AUTH_ENABLED=false)에선 제출 시 친절한 안내 에러만 반환된다.
  */
 export default function SignupPage() {
   return (
@@ -14,10 +17,7 @@ export default function SignupPage() {
           계정을 만들고 훈련 기록을 시작하세요.
         </p>
 
-        {/* TODO(F1): <SignupForm /> — 이메일/비밀번호 입력 + signup Server Action. */}
-        <div className="mt-6 rounded-m border border-dashed border-[var(--border-default)] p-6 text-center text-body-s-400 text-[var(--text-disabled)]">
-          회원가입 폼 (준비 중)
-        </div>
+        <SignupForm />
       </div>
     </main>
   );

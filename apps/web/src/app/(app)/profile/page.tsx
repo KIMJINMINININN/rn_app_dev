@@ -1,12 +1,17 @@
-import { EmptyState, ProfileIcon } from '@/shared/ui';
+import { Button, EmptyState, ProfileIcon } from '@/shared/ui';
 import { BeltBadge } from '@/entities/rank';
+import { createSupabaseServerClient } from '@/shared/api/supabase/server';
+import { isAuthEnabled } from '@/shared/api/supabase/env';
+import { logout } from '@/app/(auth)/actions';
 
 /**
- * 프로필 + 종목별 랭크 (F1 / PRD §7) — 워크어블 셸.
+ * 프로필 + 종목별 랭크 (F1 / PRD §7) — 계정 정보 + 로그아웃.
  *
- * 헤더 "프로필" + 종목(랭크 트랙)별 랭크 카드 placeholder + EmptyState.
- * 테마 토글은 상단바(ThemeToggle)에 이미 있으므로 여기선 랭크 영역만(§2.8 — 토글 위치는 F1에서 재배치 가능).
- * TODO(F1): Supabase 인증 + profiles/user_ranks 페치 → 실제 닉네임/벨트/레벨 렌더 + 테마/계정 설정.
+ * 헤더 "프로필" + 계정 정보(이메일) + 로그아웃 + 종목(랭크 트랙)별 랭크 placeholder + EmptyState.
+ * 계정 정보는 env 게이팅: 인증 ON이면 getUser()로 이메일을, OFF면 "로그인 미연결" 안내를 보여준다.
+ * 표시명/타임존/종목별 랭크 편집은 이 단계가 아니다(다음 단계).
+ *
+ * TODO(F1-next): 표시명/타임존/종목별 랭크 편집.
  */
 
 /** 표시용 랭크 트랙 카드 메타 (실데이터 연결 전 placeholder). */
@@ -17,16 +22,50 @@ const RANK_CARDS = [
   { track: 'mma', label: 'MMA' },
 ] as const;
 
-export default function ProfilePage() {
+export default async function ProfilePage() {
+  let email: string | null = null;
+  let userId: string | null = null;
+
+  if (isAuthEnabled()) {
+    const supabase = await createSupabaseServerClient();
+    const { data } = await supabase.auth.getUser();
+    email = data.user?.email ?? null;
+    userId = data.user?.id ?? null;
+  }
+
   return (
     <section aria-labelledby="profile-heading" className="mx-auto max-w-3xl">
       <h1 id="profile-heading" className="mb-1 text-heading-l text-[var(--text-strong)]">
         프로필
       </h1>
-      {/* TODO(F1): 인증 사용자 닉네임/아바타 */}
       <p className="mb-5 text-body-s-400 text-[var(--text-muted)]">
-        계정과 종목별 랭크를 관리합니다. (로그인 연동 예정)
+        계정과 종목별 랭크를 관리합니다.
       </p>
+
+      {/* 계정 정보 + 로그아웃 */}
+      <div className="mb-6 flex items-center justify-between gap-3 rounded-m border border-[var(--border-subtle)] bg-[var(--surface-base)] p-4">
+        {isAuthEnabled() ? (
+          <div className="min-w-0">
+            <p className="truncate text-button-m text-[var(--text-strong)]">
+              {email ?? '이메일 없음'}
+            </p>
+            {userId ? (
+              <p className="mt-0.5 truncate text-body-xs-400 text-[var(--text-muted)]">
+                {userId}
+              </p>
+            ) : null}
+          </div>
+        ) : (
+          <p className="text-body-s-400 text-[var(--text-muted)]">
+            로그인 미연결(인프라 후 활성화)
+          </p>
+        )}
+        <form action={logout}>
+          <Button type="submit" variant="ghost" size="sm">
+            로그아웃
+          </Button>
+        </form>
+      </div>
 
       <h2 className="mb-2 text-heading-xs text-[var(--text-strong)]">종목별 랭크</h2>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

@@ -1,9 +1,11 @@
+import { LoginForm } from './login-form';
+
 /**
- * 로그인 (F1 / Develop §6.4) — 인프라 연결 전 셸.
+ * 로그인 (F1 / Develop §6.4 / §10).
  *
  * (auth) 그룹은 AppShell 크롬 없이 중앙 정렬 단일 화면.
- * TODO(F1): login-form.tsx(client) + (auth)/actions.ts의 login Server Action 연결(Supabase).
- *   지금은 폼/서버액션 없이 자리만(인프라 last 제약).
+ * 폼 상호작용은 client(<LoginForm/>) + login Server Action((auth)/actions.ts)이 담당.
+ * 인증 미연결 단계(NEXT_PUBLIC_AUTH_ENABLED=false)에선 제출 시 친절한 안내 에러만 반환된다.
  */
 export default function LoginPage() {
   return (
@@ -14,10 +16,7 @@ export default function LoginPage() {
           트레이닝 저널에 로그인하세요.
         </p>
 
-        {/* TODO(F1): <LoginForm /> — 이메일/비밀번호 입력 + login Server Action. */}
-        <div className="mt-6 rounded-m border border-dashed border-[var(--border-default)] p-6 text-center text-body-s-400 text-[var(--text-disabled)]">
-          로그인 폼 (준비 중)
-        </div>
+        <LoginForm />
       </div>
     </main>
   );
