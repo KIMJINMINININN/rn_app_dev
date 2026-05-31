@@ -64,11 +64,10 @@
 ---
 
 ## 🔧 도구 (아무 때나)
-- [ ] **lefthook + gitleaks 시크릿 보호 복구** (Develop §3.3) — *조사 끝, 구현만 남음 (2026-05-30):*
-  - gitleaks `8.30.1` brew 설치됨 ✅. **`protect`는 레거시 → `gitleaks git --staged --no-banner --redact` 사용.**
-  - `.git/hooks/pre-commit`에 lefthook shim은 있으나 **lefthook 미선언**(pnpm dlx 캐시 경로 의존=취약) + **`lefthook.yml` 없음** → 매 커밋 "config 없음" 후 무동작.
-  - 할 일: ① 루트 `pnpm add -D -w lefthook` ② 루트 `lefthook.yml`(pre-commit→gitleaks) ③ 루트 `.gitleaks.toml`(`[extend] useDefault=true` + allowlist `docs/`·`pnpm-lock\.yaml`) ④ `pnpm exec lefthook install` 훅 재생성.
-  - 검증: 가짜 시크릿 여러 포맷 staged→차단(exit 1) / `.env.example` placeholder·정상파일→통과. (config 자동탐지: `(target)/.gitleaks.toml`.) GitHub push protection ON은 인프라.
+- [x] **lefthook + gitleaks 시크릿 보호 복구** (Develop §3.3) — 완료 `ae30146` (2026-06-01):
+  - ① 루트 `pnpm add -D -w lefthook`(2.1.9) → 훅이 `node_modules` 참조(기존 fragile pnpm dlx 캐시 경로 탈출) ② `lefthook.yml` pre-commit→`gitleaks git --staged --no-banner --redact` ③ `.gitleaks.toml`(`[extend] useDefault` + allowlist `docs/`·`pnpm-lock`; `.env.example`는 오탐 0 검증돼 **비제외**) ④ `pnpm exec lefthook install`.
+  - 검증 ✅: 가짜 AWS키+RSA키 staged→차단(exit 1) / 동일 패턴 `docs/`→allowlist 통과 / `.env.example` placeholder→오탐 없음 / 실제 커밋이 훅 통과(`no leaks found`).
+  - ↪ 남음(인프라): GitHub push protection ON(서버측 이중 방어) · 진짜 키는 `.env.local`(gitignore, allowlist 아님 → 강제 add돼도 차단).
 
 ## 🟥 인프라 — **맨 마지막에 몰아서** — Develop §13
 - [ ] `supabase init` + `config.toml` (bucket `training-media`, `file_size_limit` 등 §4.1)
