@@ -14,6 +14,7 @@
 - [x] **1. Tailwind red/black/white 재테마** + 다크모드/belt/discipline 토큰 — `tailwind-theme.css` `f1c2567` (build ✅)
 - [x] **2. Supabase 클라이언트 토대** `shared/api/supabase/{server,client,admin,index,types}` + db 스크립트 5종 + `.env.example` — (build·typecheck ✅, DB 미적용)
 - [x] **3. entity 슬라이스 6종** rank(+BeltBadge)·technique(+CategoryChip)·session·media(+youtube)·tag(+TagChip)·discipline(+DisciplineChip) + 공용 `shared/lib/zod.ts` + 테마 dark variant — 적대적 리뷰+architect APPROVED, build·typecheck ✅ (api/ 쿼리는 인프라 단계)
+- [x] **4. 앱 셸 + 내비 + 글로벌 검색바** `widgets/app-shell`(SideNav[데스크톱]→BottomNav[모바일] 반응형·TopBar+SearchBar·ThemeToggle·빨강 FAB) + `shared/ui`(Button/IconButton/EmptyState/Skeleton/theme[FOUC]) + `app/{(app),(auth)}` 라우트 스캐폴드(걸어다니는 셸) + 루트 layout `data-theme`/FOUC 주입 + Providers(QueryClient) — typecheck·build ✅, FSD 깨끗, 의존성 0 추가 *(커밋 대기, DB/auth는 스텁)*
 
 ---
 
@@ -41,9 +42,11 @@
 - ↪ 후속(인프라/이후): 각 슬라이스 `api/`(supabase 쿼리), `entities/technique` PositionChip·TechniqueCard, `entities/session` lib/ui, `entities/media` ui(MediaThumb/VideoPlayer)
 - ↪ 네이밍 결정: Design §6 기준 `DisciplineChip`/`TagChip` 사용(Develop의 DisciplineBadge/TagPill 별칭 통일)
 
-### 4. 앱 셸 + 내비 + 글로벌 검색바 — IA(PRD §7) / Design §7
-- [ ] `widgets/app-shell` (캘린더·기술·검색·프로필 + 상단 검색바 + 빠른추가 FAB)
-- [ ] `app/(app)` + `app/(auth)` 라우트 그룹 스캐폴드
+### 4. ✅ 앱 셸 + 내비 + 글로벌 검색바 — IA(PRD §7) / Design §7  *(완료, 커밋 대기)*
+- [x] `widgets/app-shell` (SideNav 데스크톱→BottomNav 모바일 반응형 · TopBar+SearchBar→`/search?q=` · ThemeToggle+오늘로 · 빨강 QuickAddFab)
+- [x] `app/(app)`(layout=AppShell+인증가드 스텁 · calendar/techniques/[id]/search/profile 페이지+loading) + `app/(auth)`(login/signup 셸) 라우트 그룹
+- [x] `shared/ui` 원자: Button(cva)·IconButton·EmptyState·Skeleton·theme(ThemeProvider+FOUC 스크립트+zustand) — 1번 후속 `data-theme` 주입·FOUC 방지 여기서 처리
+- ↪ 후속(각 기능 단계): FAB→세션에디터(F3) · "오늘로"→`/calendar?date=`(F2) · 인증가드 Supabase 연결(F1) · 페이지 실데이터 페치(F2/F4/F8) · Toaster(sonner) 도입(F3)
 
 ### 5. 인증 (F1) — Develop §10
 - [ ] `(auth)/login`·`signup` UI + Supabase auth(server actions) + 미들웨어 (profiles/user_ranks 연동)
