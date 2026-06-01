@@ -1,6 +1,6 @@
 # TodoList — MMA 트레이닝 저널 (다음 작업 체크리스트)
 
-> 브랜치 **`feature/mma-record`** · 갱신 **2026-05-30** · *다음 세션에서 바로 이어서 시작하는 용도*
+> 브랜치 **`feature/mma-record`** · 갱신 **2026-06-01** · *다음 세션에서 바로 이어서 시작하는 용도*
 > **원칙: Supabase/Vercel 실제 프로비저닝은 맨 마지막.** 그 전까지는 코드·파일만 만든다.
 > SSoT 문서: `docs/mma/PRD.md` · `docs/mma/Design.md` · `docs/mma/Develop.md`
 
@@ -15,6 +15,7 @@
 - [x] **2. Supabase 클라이언트 토대** `shared/api/supabase/{server,client,admin,index,types}` + db 스크립트 5종 + `.env.example` — (build·typecheck ✅, DB 미적용)
 - [x] **3. entity 슬라이스 6종** rank(+BeltBadge)·technique(+CategoryChip)·session·media(+youtube)·tag(+TagChip)·discipline(+DisciplineChip) + 공용 `shared/lib/zod.ts` + 테마 dark variant — 적대적 리뷰+architect APPROVED, build·typecheck ✅ (api/ 쿼리는 인프라 단계)
 - [x] **6-F2. 캘린더 홈 UI 셸** — 월간 그리드(react-calendar 커스텀)+하루상세+조립, 데이터 휴면 — `18e021d` *(2026-06-01)*
+- [x] **6-F3. 세션 에디터 UI 셸** — `features/log-session`(zod 스키마 + env-gated `logSession` 액션) + `widgets/session-editor`(반응형 바텀시트→md+모달, dialog a11y[ESC·포커스트랩·스크롤잠금·scrim-only], 날짜·종목 멀티토글 필수 + 접이식 세부정보·메모, useTransition 제출, sonner 토스트) + `shared/model/session-editor-store`(zustand 오버레이) + FAB·day-detail·calendar 3개 진입점 연결 + Toaster 도입. 저장 dormant, F4/F5/F7 섹션 스텁. architect APPROVED, typecheck·lint·build·gitleaks ✅ — `70015d9` *(2026-06-01)*
 - [x] **5. 인증 골격** (F1) login/signup/logout Server Action + client form + `shared/ui/Input` + `src/proxy.ts`(Next 16 세션 미들웨어) + env-gated 가드/프로필 — `d44df32` (실동작은 인프라, 랭크/프로필 편집은 후속) *(2026-06-01)*
 - [x] **4. 앱 셸 + 내비 + 글로벌 검색바** `widgets/app-shell`(SideNav[데스크톱]→BottomNav[모바일] 반응형·TopBar+SearchBar·ThemeToggle·빨강 FAB) + `shared/ui`(Button/IconButton/EmptyState/Skeleton/theme[FOUC]) + `app/{(app),(auth)}` 라우트 스캐폴드(걸어다니는 셸) + 루트 layout `data-theme`/FOUC 주입 + Providers(QueryClient) — typecheck·build ✅, FSD 깨끗, 의존성 0 추가 *(커밋 대기, DB/auth는 스텁)*
 
@@ -65,7 +66,8 @@
 
 ### 6. P0 기능 — Develop §12 (빌드 순서), 화면 Design §7
 - [~] **F2 캘린더 UI 셸** — `18e021d`: `features/calendar-view`(월간 그리드 react-calendar 커스텀, 종목 점+세션수, 오늘/선택 강조) + `widgets/day-detail`(세션카드/EmptyState) + `(app)/calendar` 조립(월네비·뷰탭·오늘로). 데이터 휴면(빈 맵/배열). ↪ 남음: `calendar_day_summary` 월별 조회 연결(Phase2/infra) · 셀 `+`/뷰탭 주·아젠다(P1) · `?date` 딥링크
-- [ ] F3 세션 기록(`session-editor` 바텀시트/모달 + `log_session` RPC)
+- [x] **F3 세션 에디터 UI 셸** — `70015d9`(2026-06-01): `features/log-session` + `widgets/session-editor`(바텀시트/모달 + 폼) + shared 오버레이 스토어 + sonner Toaster + 3진입점. 저장은 env-gated dormant.
+  - ↪ 남음(인프라/후속): **실 `log_session` RPC 동작**(플래그 ON) · 성공 시 **calendar 쿼리 invalidate**(QueryClient, 현재 revalidatePath만) · **다룬 기술(F4) 연결**(기술 검색/신규생성 → `p_techniques`) · **미디어(F5)**(`p_media`) · **태그(F7)**(`p_tag_ids`) 섹션 활성화 · **edit 모드 prefill**(현재 create 경로만; store는 mode/sessionId 보유) · 셀 `+`(`tileContent` 내 추가 버튼)
 - [ ] F4 기술 라이브러리(목록/상세 + 벨트·종목 배지)
 - [ ] F5 미디어(웹 파일선택/getUserMedia 업로드 + `youtube-embed` 재사용 + `/api/media/sign-upload`)
 - [ ] F6 메모·주의점(강조 박스) · F7 태그+태그검색 · F8 글로벌 검색(`search_all`) · F9 배지 일관 적용
