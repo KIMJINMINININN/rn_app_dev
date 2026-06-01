@@ -28,6 +28,23 @@ export async function fetchTagNames(): Promise<string[]> {
   return (data ?? []).map((t) => t.name);
 }
 
+/**
+ * 한 기술에 달린 태그 이름들 — 편집 폼 prefill용 (F4-AC3 / #6-1).
+ * `taggables` → `tags(name)` 임베드(tag_id NOT NULL → to-one). RLS로 본인 것만.
+ * 폼이 이 값으로 tagNames를 채워, 저장 시 재동기화(삭제 후 재삽입)가 기존 태그를 보존한다.
+ */
+export async function fetchTechniqueTagNames(techniqueId: string): Promise<string[]> {
+  const supabase = createSupabaseBrowserClient();
+  const { data, error } = await supabase
+    .from('taggables')
+    .select('tags(name)')
+    .eq('technique_id', techniqueId);
+  if (error) throw error;
+  return (data ?? [])
+    .map((row) => row.tags?.name)
+    .filter((n): n is string => !!n);
+}
+
 /** AND 필터 결과 — 선택한 태그를 **모두** 가진 기술/세션. */
 export interface TaggedItems {
   techniques: Technique[];

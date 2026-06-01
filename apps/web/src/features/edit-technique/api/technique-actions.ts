@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { createSupabaseServerClient } from '@/shared/api/supabase/server';
 import { isAuthEnabled } from '@/shared/api/supabase/env';
 import { techniqueInsertSchema, type TechniqueInsert } from '@/entities/technique';
+import { resolveTagIds } from '@/entities/tag';
 
 /**
  * 기술 생성/편집 Server Actions (F4-AC1 / Design §7d, 0005_techniques.sql).
@@ -14,8 +15,9 @@ import { techniqueInsertSchema, type TechniqueInsert } from '@/entities/techniqu
  * 인프라 단계에서 NEXT_PUBLIC_AUTH_ENABLED 를 켜면 그대로 INSERT/UPDATE 가 동작한다.
  *
  * techniques.insert / update 는 RLS(소유자 한정)로 보호된다 — user_id 조건/페이로드는 getUser()로 채운다.
- * 미디어(F5)·태그(F7) 연결(media_links/taggables)은 영속화 후속이라 여기서 다루지 않는다
- * (위젯 폼이 드래프트만 수집, 아래 호출부 seam 주석 참고).
+ * 태그(F7)는 tagNames로 받아 resolveTagIds(이름→tags 행)로 해석 후 taggables에 연결한다(#6-1):
+ *  - 생성: 새 taggables insert. 편집: 기존 기술 taggables 전체 삭제 후 현재 선택분 재삽입(재동기화).
+ * 미디어(F5) 연결(media_links)은 영속화 후속이라 여기서 다루지 않는다(위젯 폼이 드래프트만 수집).
  */
 
 /** 기술 액션 결과 — 클라이언트 폼이 토스트 분기(ok/dormant/error)에 사용. */
@@ -30,7 +32,10 @@ const INFRA_DISABLED_MESSAGE =
  * 기술 생성 (F4-AC1) → `techniques` insert(소유자 = getUser()).
  * visibility 는 입력에서 생략 시 DB default 'private' 이지만, 폼이 명시적으로 'private' 을 보낸다.
  */
-export async function createTechnique(rawInput: TechniqueInsert): Promise<TechniqueActionResult> {
+export async function createTechnique(
+  rawInput: TechniqueInsert,
+  tagNames: string[] = [],
+): Promise<TechniqueActionResult> {
   const parsed = techniqueInsertSchema.safeParse(rawInput);
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? '입력값을 확인하세요.' };
@@ -57,6 +62,15 @@ export async function createTechnique(rawInput: TechniqueInsert): Promise<Techni
     return { ok: false, error: error?.message ?? '기술 저장에 실패했습니다.' };
   }
 
+  // 태그 연결(#6-1): 이름→tag id(없으면 생성)→taggables insert. 새 기술이라 충돌 없음.
+  const tagIds = await resolveTagIds(supabase, user.id, tagNames);
+  if (tagIds.length > 0) {
+    const { error: tagErr } = await supabase
+      .from('taggables')
+      .insert(tagIds.map((tag_id) => ({ tag_id, technique_id: data.id })));
+    if (tagErr) return { ok: false, error: tagErr.message };
+  }
+
   revalidatePath('/techniques');
   return { ok: true, techniqueId: data.id };
 }
@@ -68,6 +82,7 @@ export async function createTechnique(rawInput: TechniqueInsert): Promise<Techni
 export async function updateTechnique(
   id: string,
   rawInput: TechniqueInsert,
+  tagNames: string[] = [],
 ): Promise<TechniqueActionResult> {
   const parsed = techniqueInsertSchema.safeParse(rawInput);
   if (!parsed.success) {
@@ -92,6 +107,21 @@ export async function updateTechnique(
     .eq('user_id', user.id);
   if (error) {
     return { ok: false, error: error.message };
+  }
+
+  // 태그 재동기화(#6-1): 기존 기술 taggables 전체 삭제 후 현재 선택분 재삽입(작은 집합이라 단순·정확).
+  // 폼이 편집 진입 시 기존 태그를 prefill하므로 빈 tagNames로 실수로 지워지지 않는다(fetchTechniqueTagNames).
+  // RLS(taggables_owns)로 본인 소유 행만 삭제/삽입된다.
+  const { error: delErr } = await supabase.from('taggables').delete().eq('technique_id', id);
+  if (delErr) {
+    return { ok: false, error: delErr.message };
+  }
+  const tagIds = await resolveTagIds(supabase, user.id, tagNames);
+  if (tagIds.length > 0) {
+    const { error: insErr } = await supabase
+      .from('taggables')
+      .insert(tagIds.map((tag_id) => ({ tag_id, technique_id: id })));
+    if (insErr) return { ok: false, error: insErr.message };
   }
 
   revalidatePath('/techniques');

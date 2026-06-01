@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 
 import { createSupabaseServerClient } from '@/shared/api/supabase/server';
 import { isAuthEnabled } from '@/shared/api/supabase/env';
+import { resolveTagIds } from '@/entities/tag';
 import { logSessionInputSchema, type LogSessionInput } from '../model/log-session-schema';
 
 /** logSession 결과 — 클라이언트 폼이 토스트 분기에 사용. */
@@ -34,6 +35,10 @@ export async function logSession(rawInput: LogSessionInput): Promise<LogSessionR
   const user = auth.user;
   if (!user) return { ok: false, error: '로그인이 필요합니다.' };
 
+  // 태그 이름 → tag id(없으면 생성, #6-1). RPC의 p_tag_ids는 기존 태그 id 배열을 받는다.
+  // (tags 생성은 RPC 트랜잭션 밖이지만 태그는 재사용 자원이라 고아 태그가 생겨도 무해.)
+  const tagIds = await resolveTagIds(supabase, user.id, input.tag_names);
+
   // 생성된 log_session Args 는 optional 스칼라가 `string | undefined`(null 불가)이므로
   // 미입력은 `?? undefined` 로 넘긴다(스키마의 nullable 입력 → RPC 의 undefined 생략 인자).
   // 배열(disciplines/techniques/tag_ids/media)은 Args 의 Json 파라미터에 그대로 할당된다.
@@ -50,7 +55,7 @@ export async function logSession(rawInput: LogSessionInput): Promise<LogSessionR
     p_rating: input.rating ?? undefined,
     p_disciplines: input.disciplines,
     p_techniques: input.techniques,
-    p_tag_ids: input.tag_ids,
+    p_tag_ids: tagIds,
     p_media: input.media,
   };
 

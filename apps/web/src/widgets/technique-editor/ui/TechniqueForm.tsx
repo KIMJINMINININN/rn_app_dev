@@ -16,7 +16,7 @@ import {
   techniqueInsertSchema,
   type TechniqueInsert,
 } from '@/entities/technique';
-import { fetchTagNames } from '@/entities/tag';
+import { fetchTagNames, fetchTechniqueTagNames } from '@/entities/tag';
 import { isAuthEnabled } from '@/shared/api/supabase/env';
 import { DisciplineChip, DISCIPLINE_META, STRIKING_STYLE_LABEL, usesBelt } from '@/entities/discipline';
 import { BeltBadge, BELT_META } from '@/entities/rank';
@@ -131,6 +131,13 @@ export function TechniqueForm({ mode, techniqueId }: TechniqueFormProps) {
     enabled: isEdit && isAuthEnabled(),
   });
 
+  // 편집 시 기존 태그 이름(prefill #6-1) — 저장 재동기화가 빈 값으로 태그를 지우지 않게 한다.
+  const { data: existingTagNames } = useQuery({
+    queryKey: ['technique', techniqueId, 'tags'],
+    queryFn: () => fetchTechniqueTagNames(techniqueId!),
+    enabled: isEdit && isAuthEnabled(),
+  });
+
   // 같은 기술을 두 번 채워 사용자 편집을 덮어쓰지 않도록, prefill 한 기술 id를 기억한다.
   // (existing 이 새 id로 바뀌면 다시 채운다 — id 변화 기준 1회.)
   const prefilledIdRef = useRef<string | null>(null);
@@ -148,8 +155,17 @@ export function TechniqueForm({ mode, techniqueId }: TechniqueFormProps) {
     setStrikingStyle(existing.striking_style ?? '');
     setDescriptionMd(existing.description_md ?? '');
     setDetailsMd(existing.details_md ?? '');
-    // 미디어 드래프트/태그는 별도 테이블(media_links/taggables) — prefill은 후속 TODO.
+    // 미디어 드래프트는 별도 테이블(media_links) — prefill은 후속 TODO(#6-3).
   }, [existing]);
+
+  // 태그 prefill(#6-1) — 기존 기술 태그 이름을 id 단위로 1회 채운다(존재 prefill과 독립 타이밍).
+  const prefilledTagsIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!isEdit || !techniqueId || existingTagNames === undefined) return;
+    if (prefilledTagsIdRef.current === techniqueId) return;
+    prefilledTagsIdRef.current = techniqueId;
+    setTagNames(existingTagNames);
+  }, [existingTagNames, isEdit, techniqueId]);
 
   // 종목에 따라 가능한 분류 목록(PRD §4.2). 종목 미선택이면 빈 목록.
   const categoryOptions = useMemo<TechniqueCategory[]>(
@@ -161,7 +177,14 @@ export function TechniqueForm({ mode, techniqueId }: TechniqueFormProps) {
   const showStriking = discipline === 'striking';
 
   // 이름·종목·분류가 필수(***) — 셋이 채워지고 제출 중이 아닐 때만 저장 가능.
-  const canSave = name.trim() !== '' && discipline !== '' && category !== '' && !pending;
+  // 편집 모드에선 태그 prefill(existingTagNames)이 로드되기 전 저장을 막는다 — 빈 목록 재동기화로
+  // 기존 태그가 지워지는 race 방지(#6-1). create 모드는 prefill 없으니 영향 없음.
+  const canSave =
+    name.trim() !== '' &&
+    discipline !== '' &&
+    category !== '' &&
+    !pending &&
+    (!isEdit || existingTagNames !== undefined);
 
   /** 종목 변경 — 현재 분류가 새 종목에서 유효하지 않으면 리셋. 벨트/타격 필드도 비-해당 종목이면 비운다. */
   function handleDisciplineChange(next: Discipline | '') {
@@ -215,20 +238,21 @@ export function TechniqueForm({ mode, techniqueId }: TechniqueFormProps) {
     }
     const payload: TechniqueInsert = parsed.data;
 
-    // TODO(infra): mediaDrafts → media_assets 생성 + 기술 연결(media_links), tagNames → tags upsert → taggables.
-    //   현재는 드래프트/이름만 수집하고 저장으로 흘리지 않는다(영속화 후속). void로 사용 표시 — 셸 단계 의도.
+    // TODO(#6-3): mediaDrafts → media_assets 생성 + 기술 연결(media_links). 현재는 드래프트만 수집.
     void mediaDrafts;
-    void tagNames;
 
     startTransition(async () => {
+      // 태그 이름은 액션에 함께 넘긴다(#6-1) — 서버가 tags 행 생성/조회 후 taggables 연결/재동기화.
       const res =
         mode === 'edit' && techniqueId
-          ? await updateTechnique(techniqueId, payload)
-          : await createTechnique(payload);
+          ? await updateTechnique(techniqueId, payload, tagNames)
+          : await createTechnique(payload, tagNames);
 
       if (res.ok) {
         // 목록 쿼리(['techniques',*])를 무효화해 라이브러리가 새/수정 기술로 갱신되게 한다(navigation 전).
         queryClient.invalidateQueries({ queryKey: ['techniques'] });
+        // 태그 갱신(#6-1): 새 태그 생성/연결 변화 → 자동완성·태그 보기 무효화.
+        queryClient.invalidateQueries({ queryKey: ['tags'] });
         toast.success('저장됨');
         if (mode === 'create') {
           router.push('/techniques');

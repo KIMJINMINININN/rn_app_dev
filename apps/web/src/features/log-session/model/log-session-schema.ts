@@ -8,8 +8,8 @@ import { DISCIPLINES, CLASS_TYPES } from '@/shared/model/enums';
  * 종목(disciplines)만 필수(F3-AC1/AC6), 나머지는 nullable. 'YYYY-MM-DD' 날짜 정규식은
  * session.ts의 DATE_REGEX 관용구를 그대로 따른다.
  *
- * F4/F5/F7(다룬 기술·미디어·태그) 연동 전까지 techniques/tag_ids/media는 항상 빈 배열(셸)로
- * 들어오지만, RPC 계약을 유지하기 위해 스키마엔 존재시키고 default([])로 둔다.
+ * 태그(F7)는 **이름**으로 받아 서버 액션이 resolveTagIds로 tags 행 생성/조회 후 RPC p_tag_ids에 매핑한다(#6-1).
+ * F4/F5(다룬 기술·미디어) 연동 전까지 techniques/media는 항상 빈 배열(셸)로 들어오지만 RPC 계약 유지를 위해 둔다.
  *
  * SSoT: docs/mma/Develop.md §12 / PRD §F3
  */
@@ -28,11 +28,12 @@ export const logSessionInputSchema = z.object({
   partners: z.string().trim().max(200).nullable().optional(),
   memo_md: z.string().trim().max(5000).nullable().optional(),
   rating: z.number().int().min(1).max(5).nullable().optional(),
-  // F4/F5/F7 연동 전까지 항상 빈 배열(셸). RPC 계약 유지를 위해 스키마엔 존재.
+  // 태그는 이름으로 수집(서버 액션이 id로 해석, #6-1). UI가 12개로 가드하지만 방어적 상한.
+  tag_names: z.array(z.string().trim().min(1)).max(50).default([]),
+  // F4/F5 연동 전까지 항상 빈 배열(셸). RPC 계약 유지를 위해 스키마엔 존재.
   techniques: z
     .array(z.object({ technique_id: z.string().uuid(), day_memo_md: z.string().nullable() }))
     .default([]),
-  tag_ids: z.array(z.string().uuid()).default([]),
   media: z.array(z.object({ media_id: z.string().uuid() })).default([]),
 });
 export type LogSessionInput = z.infer<typeof logSessionInputSchema>;

@@ -115,9 +115,9 @@ export function SessionEditorForm({ initialDate, onDone }: SessionEditorFormProp
       partners: partners.trim() || null,
       memo_md: memo.trim() || null,
       rating: null,
+      // 태그 이름 — 서버 액션이 tags 행 생성/조회 후 taggables로 연결(#6-1).
+      tag_names: tagNames,
       techniques: [],
-      // TODO(infra): tagNames → tags upsert(이름→행) → tag_id[] 를 여기 tag_ids 에 매핑.
-      tag_ids: [],
       // TODO(infra): mediaDrafts → media_assets 생성(youtube=row, upload=sign-upload→PUT→row) → media_id[] 를 여기 media 에 매핑.
       media: [],
     };
@@ -133,6 +133,8 @@ export function SessionEditorForm({ initialDate, onDone }: SessionEditorFormProp
         onDone();
         // 캘린더 읽기 갱신: ['calendar'] 프리픽스로 summaries(월 그리드)+day(선택일 상세) 모두 무효화.
         void queryClient.invalidateQueries({ queryKey: ['calendar'] });
+        // 태그 갱신: 새 태그가 생겼을 수 있어 자동완성/태그 보기 무효화(#6-1).
+        void queryClient.invalidateQueries({ queryKey: ['tags'] });
       } else if (res.dormant) {
         toast.info(res.error); // 인프라 전 안내 — 닫지 않음(사용자가 셸 탐색 유지).
       } else {
