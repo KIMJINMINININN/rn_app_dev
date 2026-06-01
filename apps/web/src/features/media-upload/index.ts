@@ -5,3 +5,5 @@
  */
 export * from './ui/MediaPicker';
 export * from './model/media-draft';
+export * from './api/persist-media';
+export * from './api/media-asset-actions';

@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { logSession, logSessionInputSchema } from '@/features/log-session';
-import { MediaPicker, type MediaDraft } from '@/features/media-upload';
+import { MediaPicker, persistMediaDrafts, type MediaDraft } from '@/features/media-upload';
 import { TagInput } from '@/features/tag-filter';
 import { CLASS_TYPE_LABELS } from '@/entities/session';
 import { fetchTagNames } from '@/entities/tag';
@@ -121,7 +121,7 @@ export function SessionEditorForm({ initialDate, onDone }: SessionEditorFormProp
       tag_names: tagNames,
       // 다룬 기술 — RPC가 session_techniques로 연결(#6-2).
       techniques: techniqueDrafts,
-      // TODO(infra): mediaDrafts → media_assets 생성(youtube=row, upload=sign-upload→PUT→row) → media_id[] 를 여기 media 에 매핑.
+      // 미디어는 저장 시 persistMediaDrafts로 업로드/행 생성 후 media_id를 채운다(#6-3, 아래 transition).
       media: [],
     };
     const parsed = logSessionInputSchema.safeParse(candidate);
@@ -130,7 +130,21 @@ export function SessionEditorForm({ initialDate, onDone }: SessionEditorFormProp
       return;
     }
     startTransition(async () => {
-      const res = await logSession(parsed.data);
+      // 미디어 먼저 영속화(youtube=row, upload=sign→PUT→row) → media_id[]. 실패 시 세션 저장 중단.
+      let mediaIds: string[] = [];
+      if (mediaDrafts.length > 0) {
+        try {
+          mediaIds = await persistMediaDrafts(mediaDrafts);
+        } catch (e) {
+          toast.error(e instanceof Error ? e.message : '미디어 업로드에 실패했습니다.');
+          return;
+        }
+      }
+
+      const res = await logSession({
+        ...parsed.data,
+        media: mediaIds.map((id) => ({ media_id: id })),
+      });
       if (res.ok) {
         toast.success('저장됨');
         onDone();
