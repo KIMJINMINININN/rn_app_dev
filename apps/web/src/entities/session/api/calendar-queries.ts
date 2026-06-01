@@ -54,19 +54,24 @@ export async function fetchDaySessions(dateISO: string): Promise<SessionWithDisc
   const { data, error } = await supabase
     .from('sessions')
     .select(
-      '*, session_disciplines(discipline), taggables(tags(name)), session_techniques(day_memo_md, techniques(id, name, discipline))',
+      '*, session_disciplines(discipline), taggables(tags(name)), session_techniques(day_memo_md, techniques(id, name, discipline)), media_links(media_assets(id, kind, youtube_video_id, storage_path, title))',
     )
     .eq('trained_on', dateISO)
     .order('created_at', { ascending: true });
   if (error) throw error;
-  // sessions Row는 Session 모델과 1:1(snake_case·nullability 동일) → 중첩 종목·태그·기술만 평탄화해 합성.
+  // sessions Row는 Session 모델과 1:1(snake_case·nullability 동일) → 중첩 종목·태그·기술·미디어만 평탄화해 합성.
   // 구성 형태가 SessionWithDisciplines와 정확히 일치하므로 마지막에 narrow 캐스트만 적용(any 미사용).
-  return (data ?? []).map(({ session_disciplines, taggables, session_techniques, ...s }) => ({
-    ...s,
-    disciplines: (session_disciplines ?? []).map((sd) => sd.discipline),
-    tags: (taggables ?? []).map((t) => t.tags?.name).filter((n): n is string => !!n),
-    techniques: (session_techniques ?? [])
-      .filter((st) => st.techniques != null)
-      .map((st) => ({ ...st.techniques!, day_memo_md: st.day_memo_md })),
-  })) as SessionWithDisciplines[];
+  return (data ?? []).map(
+    ({ session_disciplines, taggables, session_techniques, media_links, ...s }) => ({
+      ...s,
+      disciplines: (session_disciplines ?? []).map((sd) => sd.discipline),
+      tags: (taggables ?? []).map((t) => t.tags?.name).filter((n): n is string => !!n),
+      techniques: (session_techniques ?? [])
+        .filter((st) => st.techniques != null)
+        .map((st) => ({ ...st.techniques!, day_memo_md: st.day_memo_md })),
+      media: (media_links ?? [])
+        .map((ml) => ml.media_assets)
+        .filter((m): m is NonNullable<typeof m> => m != null),
+    }),
+  ) as SessionWithDisciplines[];
 }

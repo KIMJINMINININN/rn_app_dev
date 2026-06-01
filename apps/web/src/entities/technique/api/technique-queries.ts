@@ -68,7 +68,7 @@ export async function fetchTechniqueSessions(
   const { data, error } = await supabase
     .from('session_techniques')
     .select(
-      'sessions(*, session_disciplines(discipline), taggables(tags(name)), session_techniques(day_memo_md, techniques(id, name, discipline)))',
+      'sessions(*, session_disciplines(discipline), taggables(tags(name)), session_techniques(day_memo_md, techniques(id, name, discipline)), media_links(media_assets(id, kind, youtube_video_id, storage_path, title)))',
     )
     .eq('technique_id', techniqueId);
   if (error) throw error;
@@ -77,14 +77,17 @@ export async function fetchTechniqueSessions(
     // to-one 임베드라 단일 객체이지만, 방어적으로 null(고아 행 등)은 제외한다.
     .map((row) => row.sessions)
     .filter((s): s is NonNullable<typeof s> => s != null)
-    // sessions Row는 Session 모델과 1:1 → 중첩 종목·태그·기술만 평탄화해 합성.
-    .map(({ session_disciplines, taggables, session_techniques, ...s }) => ({
+    // sessions Row는 Session 모델과 1:1 → 중첩 종목·태그·기술·미디어만 평탄화해 합성.
+    .map(({ session_disciplines, taggables, session_techniques, media_links, ...s }) => ({
       ...s,
       disciplines: (session_disciplines ?? []).map((sd) => sd.discipline),
       tags: (taggables ?? []).map((t) => t.tags?.name).filter((n): n is string => !!n),
       techniques: (session_techniques ?? [])
         .filter((st) => st.techniques != null)
         .map((st) => ({ ...st.techniques!, day_memo_md: st.day_memo_md })),
+      media: (media_links ?? [])
+        .map((ml) => ml.media_assets)
+        .filter((m): m is NonNullable<typeof m> => m != null),
     }))
     // 최근 훈련부터(trained_on desc). 동일 날짜는 created_at desc 로 안정 정렬.
     .sort((a, b) => {

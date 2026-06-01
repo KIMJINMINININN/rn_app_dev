@@ -126,19 +126,24 @@ export async function fetchTaggedItems(tagNames: string[]): Promise<TaggedItems>
     const { data, error } = await supabase
       .from('sessions')
       .select(
-        '*, session_disciplines(discipline), taggables(tags(name)), session_techniques(day_memo_md, techniques(id, name, discipline))',
+        '*, session_disciplines(discipline), taggables(tags(name)), session_techniques(day_memo_md, techniques(id, name, discipline)), media_links(media_assets(id, kind, youtube_video_id, storage_path, title))',
       )
       .in('id', sessionIds)
       .order('trained_on', { ascending: false });
     if (error) throw error;
-    sessions = (data ?? []).map(({ session_disciplines, taggables, session_techniques, ...s }) => ({
-      ...s,
-      disciplines: (session_disciplines ?? []).map((sd) => sd.discipline),
-      tags: (taggables ?? []).map((t) => t.tags?.name).filter((n): n is string => !!n),
-      techniques: (session_techniques ?? [])
-        .filter((st) => st.techniques != null)
-        .map((st) => ({ ...st.techniques!, day_memo_md: st.day_memo_md })),
-    })) as SessionWithDisciplines[];
+    sessions = (data ?? []).map(
+      ({ session_disciplines, taggables, session_techniques, media_links, ...s }) => ({
+        ...s,
+        disciplines: (session_disciplines ?? []).map((sd) => sd.discipline),
+        tags: (taggables ?? []).map((t) => t.tags?.name).filter((n): n is string => !!n),
+        techniques: (session_techniques ?? [])
+          .filter((st) => st.techniques != null)
+          .map((st) => ({ ...st.techniques!, day_memo_md: st.day_memo_md })),
+        media: (media_links ?? [])
+          .map((ml) => ml.media_assets)
+          .filter((m): m is NonNullable<typeof m> => m != null),
+      }),
+    ) as SessionWithDisciplines[];
   }
 
   return { techniques, sessions };

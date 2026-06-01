@@ -1,6 +1,7 @@
 import { MarkdownView } from '@/shared/ui';
 import { DisciplineChip } from '@/entities/discipline';
 import { TagChip } from '@/entities/tag';
+import { YoutubeEmbed, UploadVideo } from '@/entities/media';
 import {
   CLASS_TYPE_LABELS,
   intensityDots,
@@ -122,10 +123,26 @@ export function SessionCard({ session }: SessionCardProps) {
           )}
         </section>
 
-        {/* TODO(F5): media 연동 — 내 영상/유튜브/외부 링크 카드 행(Design §9). */}
+        {/* 미디어(#6-3b) — youtube=임베드 / upload=서명URL 재생. 없으면 안내. */}
         <section className="space-y-1">
           <SectionLabel>미디어</SectionLabel>
-          <p className="text-body-xs-400 text-[var(--text-disabled)]">영상/링크 연동 예정</p>
+          {session.media.length > 0 ? (
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {session.media.map((m) =>
+                m.kind === 'youtube' && m.youtube_video_id ? (
+                  <YoutubeEmbed
+                    key={m.id}
+                    videoId={m.youtube_video_id}
+                    title={m.title ?? undefined}
+                  />
+                ) : m.kind === 'upload' && m.storage_path ? (
+                  <UploadVideo key={m.id} storagePath={m.storage_path} />
+                ) : null,
+              )}
+            </div>
+          ) : (
+            <p className="text-body-xs-400 text-[var(--text-disabled)]">미디어 없음</p>
+          )}
         </section>
 
         {/* 메모(memo_md)는 세션 본체의 실데이터 — 값이 있으면 마크다운 렌더(F6), 없으면 플레이스홀더. */}

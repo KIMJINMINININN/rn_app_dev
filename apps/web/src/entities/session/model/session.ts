@@ -4,6 +4,7 @@ import {
   DISCIPLINES,
   VISIBILITIES,
   type Discipline,
+  type MediaKind,
 } from '@/shared/model/enums';
 import { isoTimestamp } from '@/shared/lib/zod';
 
@@ -57,13 +58,26 @@ export type SessionTechniqueRef = {
   day_memo_md: string | null;
 };
 
-/** 조회 편의용 합성 타입 — 세션 + 연결된 종목 목록 + 붙은 태그 + 다룬 기술(표시용) */
+/** 세션에 연결된 미디어 1건(표시용) — media_links→media_assets 평탄화(#6-3b). */
+export type SessionMediaRef = {
+  id: string;
+  kind: MediaKind;
+  /** kind='youtube'면 11자 videoId. */
+  youtube_video_id: string | null;
+  /** kind='upload'면 Storage 경로(재생 시 서명 URL 발급). */
+  storage_path: string | null;
+  title: string | null;
+};
+
+/** 조회 편의용 합성 타입 — 세션 + 종목 + 태그 + 다룬 기술 + 미디어(표시용) */
 export type SessionWithDisciplines = Session & {
   disciplines: Discipline[];
   /** taggables→tags 평탄화한 태그 이름들(없으면 빈 배열, #6-1b). */
   tags: string[];
   /** session_techniques→techniques 평탄화한 다룬 기술들(없으면 빈 배열, #6-2). */
   techniques: SessionTechniqueRef[];
+  /** media_links→media_assets 평탄화한 미디어들(없으면 빈 배열, #6-3b). */
+  media: SessionMediaRef[];
 };
 
 /**
