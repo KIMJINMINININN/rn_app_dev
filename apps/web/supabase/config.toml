@@ -118,7 +118,7 @@ file_size_limit = "100MiB"
 public = false
 file_size_limit = "100MiB"
 allowed_mime_types = ["video/mp4", "video/quicktime", "image/jpeg", "image/png", "image/webp"]
-objects_path = "./training-media"
+# objects_path 생략: 버킷 초기 객체 시드 불필요(로컬 폴더 요구 회피). 인프라 원격은 대시보드/마이그레이션으로 생성.
 
 # Allow connections via S3 compatible clients
 [storage.s3_protocol]
