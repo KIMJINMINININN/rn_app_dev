@@ -1,8 +1,27 @@
 # TodoList — MMA 트레이닝 저널 (다음 작업 체크리스트)
 
-> 브랜치 **`feature/mma-record`** · 갱신 **2026-06-01** · *다음 세션에서 바로 이어서 시작하는 용도*
+> 브랜치 **`feature/mma-record`** · 갱신 **2026-06-01 (EOD)** · *다음 세션에서 바로 이어서 시작하는 용도*
 > **원칙: Supabase/Vercel 실제 프로비저닝은 맨 마지막.** 그 전까지는 코드·파일만 만든다.
 > SSoT 문서: `docs/mma/PRD.md` · `docs/mma/Design.md` · `docs/mma/Develop.md`
+> 오늘 작업 상세: **`docs/mma/20260601_app_work.md`**
+
+---
+
+## 🟢 내일 시작점 (여기부터)
+
+**어디까지 왔나(2026-06-01 EOD):** 인프라 점등 완료(실 Supabase `the-others-mma`, `AUTH_ENABLED=true`). 프리셋 0016 db:push 완료(신규가입 라이브). 그 위에서 **읽기/쓰기 와이어링이 핵심 루프 전부 라이브**:
+캘린더 · 기술(목록/상세/생성/편집) · 프로필/랭크 · 태그(attach+필터+표시) · 세션↔다룬기술 · **세션 미디어(업로드 sign→PUT→media_assets + 서명URL 재생)**. 마지막 push = `715d00d`. 빌드/타입/린트/gitleaks 모두 green.
+
+**다음 할 일 (작은 잔손질 — 우선순위 순):**
+1. **기술 미디어 영속화** — 기술 에디터 `mediaDrafts`가 아직 저장 안 됨(`void mediaDrafts`). 생성은 `persistMediaDrafts`+`media_links(technique_id)`로 쉽게 붙음. ⚠️ **편집 prefill 난제**: 저장된 업로드 자산을 File로 되살릴 수 없음 → 편집 모드는 "기존 미디어 표시 + 추가/삭제" 모델 별도 설계 필요(태그처럼 단순 재동기화 불가). 생성 경로부터 붙이고 편집은 후속.
+2. **쿼리 에러 핸들링 폴리시** — 현재 useQuery 실패 시 조용히 빈 상태. 실패 시 토스트/재시도 affordance(특히 미디어 업로드·서명URL). 공통 패턴 하나 정해 적용.
+3. **(소) 다룬 기술 그날 메모(day_memo_md) 입력** — TechniquePicker에 선택 기술별 메모 input. RPC·스키마·표시(SessionCard)는 이미 day_memo 지원, 입력 UI만 추가.
+4. **(소) `/calendar?date=` 딥링크** — 검색/역참조 세션 결과 클릭 시 그 날짜로 진입. 캘린더 screen이 searchParams 읽도록.
+5. **기술 상세 미디어** — 현재 MediaStub("준비 중"). 기술 미디어(1번) 붙으면 기술에 연결된 media_assets 표시.
+
+**그 다음(인프라 마무리):** Vercel 배포(⑥ — 새 프로젝트, env, Supabase Auth site_url/redirect) + 모바일 `EXPO_PUBLIC_CLIENT_URL`을 실 Vercel 도메인으로.
+
+**재개 명령:** `git log --oneline -8` 로 최근 커밋 확인 → 위 1번부터.
 
 ---
 
@@ -107,17 +126,19 @@
 - [x] `pnpm web db:types` → 실 `Database` 타입(727줄) + **placeholder 캐스트 전부 제거** — `635b0af`
 - [x] `.env.local` 키 작성(새 MMA sb_ 키, gitignore·미커밋) — 사장님 *(⚠️ 키 이름이 `E2E_SUPABASE_*`로 잘못 들어가 500 → `NEXT_PUBLIC_SUPABASE_*`/`SUPABASE_SECRET_KEY`로 교정)*
 - [x] **`NEXT_PUBLIC_AUTH_ENABLED=true` 점등 + 로컬 스모크테스트** — dev :3002에서 /login 200·/calendar 307 가드·sign-upload 401·**사장님 회원가입/로그인 실제 성공**(쓰기 경로 라이브)
-- [ ] **읽기 경로 데이터 와이어링** — dormant UI(캘린더 daySummaries/세션·기술 목록·상세·태그 suggestions/AND·프로필 로드)를 실 페치로 + 쿼리 invalidate. + 미디어 실업로드 플로우 + log_session 다룬기술/태그/미디어 매핑. **(다음 큰 코드 작업 — 화면에 실데이터)**
-- [ ] 원격 `training-media` 버킷 생성(대시보드) — 미디어 업로드 전
-- [ ] Vercel 프로젝트 + env → 배포 (+ Supabase Auth site_url/redirect에 Vercel 도메인)
+- [x] **읽기/쓰기 데이터 와이어링 (핵심 루프 전부 라이브, 2026-06-01)** — 읽기 #1 캘린더(`ac35a64`)·#2 기술목록(`a38dd0e`)·#3 기술상세+편집(`6b2325e`)·#4 프로필/랭크(`ef654c0`)·#5 태그 suggestions/AND(`b86a441`) / 쓰기 #6-1 태그 attach(`33c828b`)·#6-1b 인라인 TagChip 표시(`96d0ddd`)·#6-2 세션↔다룬기술 picker+표시(`1a2e408`)·#6-3 미디어 업로드(sign→PUT→media_assets)+서명URL 재생(`517b96e`+`715d00d`). 패턴=`useQuery`+`enabled:isAuthEnabled()`+저장시 invalidate. *(남은 잔손질은 상단 🟢 내일 시작점 참고)*
+- [x] 원격 `training-media` 버킷 생성(대시보드) — 사장님 *(미디어 업로드 동작 확인됨)*
+- [x] **프리셋 `0016` db:push 완료** — 사장님(2026-06-01), 신규 가입자 41종 라이브
+- [ ] Vercel 프로젝트 + env → 배포 (+ Supabase Auth site_url/redirect에 Vercel 도메인) · 모바일 `EXPO_PUBLIC_CLIENT_URL`=실 Vercel 도메인
 - [ ] (선택) 독립 레포 추출 여부 결정
 
 ## ❓ 열린 결정 / 콘텐츠 — Develop §14
 - [x] **제품명/브랜드 = `MatLog`** (T12, 2026-06-01) — 종목 중립(매트 위 훈련). layout title + 로그인 카피 반영
-- [x] **프리셋 기술 목록** — `0016_starter_techniques_fill.sql`로 `seed_starter_techniques` 교체: 종목별 7~9개(총 41, 흰/파랑 위주). 신규 가입 시 본인 소유로 복사돼 편집·삭제·추가 자유 — T13 *(원격 반영=`pnpm web db:push`)*
+- [x] **프리셋 기술 목록** — `0016_starter_techniques_fill.sql`로 `seed_starter_techniques` 교체: 종목별 7~9개(총 41, 흰/파랑 위주). 신규 가입 시 본인 소유로 복사돼 편집·삭제·추가 자유 — T13 *(db:push 완료, 라이브)*
 - [x] **영상 업로드 한도 = 60s/100MB 확정** (T1) — config.toml·env·sign-upload 이미 이 값 사용
 - [x] **소셜 로그인 = 이메일만(MVP)** (T6) · email confirm(T5)=사장님 대시보드 설정 사항
-- [ ] 썸네일 생성 방식(T2, 기본=클라 첫프레임 캡처) · 서명URL TTL(T3, 기본 600s) · 모바일 업로드 인증(T9, P1) — 미디어 와이어링 때 확정
+- [x] **서명URL TTL = 600s(10분) 확정** (T3) — `media-queries.SIGNED_URL_TTL_SEC` (#6-3b)
+- [ ] 썸네일 생성 방식(T2, 기본=클라 첫프레임 캡처) · 모바일 업로드 인증(T9, P1) — 후속
 
 ---
 
