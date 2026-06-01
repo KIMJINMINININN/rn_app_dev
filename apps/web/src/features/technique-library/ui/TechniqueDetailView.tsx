@@ -13,6 +13,7 @@ import {
 import { DisciplineChip, usesBelt } from '@/entities/discipline';
 import { BeltBadge } from '@/entities/rank';
 import { CLASS_TYPE_LABELS, type SessionWithDisciplines } from '@/entities/session';
+import { fetchTechniqueTagNames, TagChip } from '@/entities/tag';
 import { isAuthEnabled } from '@/shared/api/supabase/env';
 import { Callout, ChevronLeftIcon, EmptyState, MarkdownView, Skeleton } from '@/shared/ui';
 
@@ -74,6 +75,13 @@ export function TechniqueDetailView({ techniqueId }: TechniqueDetailViewProps) {
     enabled,
   });
 
+  // 붙은 태그(#6-1b 표시). 편집 폼과 동일 키 → 캐시 공유. enabled OFF면 비활성 → [].
+  const { data: techniqueTags = [] } = useQuery({
+    queryKey: ['technique', techniqueId, 'tags'],
+    queryFn: () => fetchTechniqueTagNames(techniqueId),
+    enabled,
+  });
+
   return (
     <article className="mx-auto max-w-3xl">
       {/* ── 헤더 행 — 뒤로(라이브러리) + 수정 링크 (Design §7d 헤더). 모든 상태 공통 셸. ── */}
@@ -119,6 +127,15 @@ export function TechniqueDetailView({ techniqueId }: TechniqueDetailViewProps) {
             <CategoryChip category={technique.category} size="sm" />
             {technique.position && <PositionChip position={technique.position} size="sm" />}
           </div>
+
+          {/* 태그(#6-1b) — 붙은 태그 칩 행. 없으면 생략(섹션 잡음 방지). */}
+          {techniqueTags.length > 0 && (
+            <div className="mt-3 flex flex-wrap items-center gap-1.5">
+              {techniqueTags.map((t) => (
+                <TagChip key={t} label={t} size="sm" />
+              ))}
+            </div>
+          )}
 
           <hr className="my-5 border-[var(--border-subtle)]" />
 
@@ -202,6 +219,12 @@ function PreviewBody() {
         <BeltBadge belt="blue" stripes={2} />
         <CategoryChip category="submission" size="sm" />
         <PositionChip position="back_control" size="sm" />
+      </div>
+
+      {/* 태그 미리보기 데모 행(AUTH OFF 셸 — 가짜 데이터, aria-hidden). */}
+      <div className="mt-3 flex flex-wrap items-center gap-1.5" aria-hidden="true">
+        <TagChip label="백테이크" size="sm" />
+        <TagChip label="디테일" size="sm" />
       </div>
 
       <hr className="my-5 border-[var(--border-subtle)]" />

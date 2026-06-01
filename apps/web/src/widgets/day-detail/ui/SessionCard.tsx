@@ -1,5 +1,6 @@
 import { MarkdownView } from '@/shared/ui';
 import { DisciplineChip } from '@/entities/discipline';
+import { TagChip } from '@/entities/tag';
 import {
   CLASS_TYPE_LABELS,
   intensityDots,
@@ -117,10 +118,18 @@ export function SessionCard({ session }: SessionCardProps) {
           )}
         </section>
 
-        {/* TODO(F4): tags 연동 — TagChip 행. */}
+        {/* 태그(#6-1b) — 세션에 붙은 태그 칩. 없으면 안내. */}
         <section className="space-y-1">
           <SectionLabel>태그</SectionLabel>
-          <p className="text-body-xs-400 text-[var(--text-disabled)]">태그 연동 예정</p>
+          {session.tags.length > 0 ? (
+            <div className="flex flex-wrap items-center gap-1.5">
+              {session.tags.map((t) => (
+                <TagChip key={t} label={t} size="xs" />
+              ))}
+            </div>
+          ) : (
+            <p className="text-body-xs-400 text-[var(--text-disabled)]">태그 없음</p>
+          )}
         </section>
       </div>
     </article>

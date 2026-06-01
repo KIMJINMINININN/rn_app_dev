@@ -48,9 +48,11 @@ export const sessionDisciplineSchema = z.object({
 });
 export type SessionDiscipline = z.infer<typeof sessionDisciplineSchema>;
 
-/** 조회 편의용 합성 타입 — 세션 + 연결된 종목 목록 */
+/** 조회 편의용 합성 타입 — 세션 + 연결된 종목 목록 + 붙은 태그 이름(표시용, #6-1b) */
 export type SessionWithDisciplines = Session & {
   disciplines: Discipline[];
+  /** taggables→tags 평탄화한 태그 이름들(없으면 빈 배열). */
+  tags: string[];
 };
 
 /**
