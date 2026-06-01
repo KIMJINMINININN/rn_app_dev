@@ -14,6 +14,7 @@
 - [x] **1. Tailwind red/black/white 재테마** + 다크모드/belt/discipline 토큰 — `tailwind-theme.css` `f1c2567` (build ✅)
 - [x] **2. Supabase 클라이언트 토대** `shared/api/supabase/{server,client,admin,index,types}` + db 스크립트 5종 + `.env.example` — (build·typecheck ✅, DB 미적용)
 - [x] **3. entity 슬라이스 6종** rank(+BeltBadge)·technique(+CategoryChip)·session·media(+youtube)·tag(+TagChip)·discipline(+DisciplineChip) + 공용 `shared/lib/zod.ts` + 테마 dark variant — 적대적 리뷰+architect APPROVED, build·typecheck ✅ (api/ 쿼리는 인프라 단계)
+- [x] **6-F2. 캘린더 홈 UI 셸** — 월간 그리드(react-calendar 커스텀)+하루상세+조립, 데이터 휴면 — `18e021d` *(2026-06-01)*
 - [x] **5. 인증 골격** (F1) login/signup/logout Server Action + client form + `shared/ui/Input` + `src/proxy.ts`(Next 16 세션 미들웨어) + env-gated 가드/프로필 — `d44df32` (실동작은 인프라, 랭크/프로필 편집은 후속) *(2026-06-01)*
 - [x] **4. 앱 셸 + 내비 + 글로벌 검색바** `widgets/app-shell`(SideNav[데스크톱]→BottomNav[모바일] 반응형·TopBar+SearchBar·ThemeToggle·빨강 FAB) + `shared/ui`(Button/IconButton/EmptyState/Skeleton/theme[FOUC]) + `app/{(app),(auth)}` 라우트 스캐폴드(걸어다니는 셸) + 루트 layout `data-theme`/FOUC 주입 + Providers(QueryClient) — typecheck·build ✅, FSD 깨끗, 의존성 0 추가 *(커밋 대기, DB/auth는 스텁)*
 
@@ -63,7 +64,7 @@
 - ↪ 실제 저장은 인프라(실 Supabase). 지금은 UI + 휴면 액션(env-gated)까지. profile 페이지의 랭크 placeholder를 실 편집 UI로 대체.
 
 ### 6. P0 기능 — Develop §12 (빌드 순서), 화면 Design §7
-- [ ] F2 캘린더(월간+하루상세, react-calendar 커스텀 + `calendar_day_summary`)
+- [~] **F2 캘린더 UI 셸** — `18e021d`: `features/calendar-view`(월간 그리드 react-calendar 커스텀, 종목 점+세션수, 오늘/선택 강조) + `widgets/day-detail`(세션카드/EmptyState) + `(app)/calendar` 조립(월네비·뷰탭·오늘로). 데이터 휴면(빈 맵/배열). ↪ 남음: `calendar_day_summary` 월별 조회 연결(Phase2/infra) · 셀 `+`/뷰탭 주·아젠다(P1) · `?date` 딥링크
 - [ ] F3 세션 기록(`session-editor` 바텀시트/모달 + `log_session` RPC)
 - [ ] F4 기술 라이브러리(목록/상세 + 벨트·종목 배지)
 - [ ] F5 미디어(웹 파일선택/getUserMedia 업로드 + `youtube-embed` 재사용 + `/api/media/sign-upload`)
