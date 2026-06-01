@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { EmptyState, ChevronLeftIcon } from '@/shared/ui';
 import { DisciplineChip } from '@/entities/discipline';
 import { BeltBadge } from '@/entities/rank';
+import { CategoryChip, PositionChip } from '@/entities/technique';
 
 /**
  * 기술 상세 셸 (F4/F5/F6 / Design §7d, §9.3) — 워크어블 셸.
@@ -35,11 +36,16 @@ export default async function TechniqueDetailPage({
       <h1 className="text-heading-l text-[var(--text-strong)]">기술 이름</h1>
 
       {/* 종목 + 벨트 + 분류·포지션 슬롯 (Design §7d) */}
-      <div className="mt-2 flex flex-wrap items-center gap-2">
-        {/* TODO(F4): 실제 discipline/belt/stripe로 교체 — 아래는 슬롯 데모용 placeholder */}
+      {/* TODO(infra): techniqueId로 기술 페치. 아래 배지/본문은 레이아웃 미리보기용 placeholder(실데이터 아님). */}
+      {/* 미디어 "(준비 중)" 행과 동일하게 on-screen "미리보기" 표식 + aria-hidden 으로 AT에서 숨김 — 실데이터로 오인 방지. */}
+      <div className="mt-2 flex flex-wrap items-center gap-2" aria-hidden="true">
+        <span className="rounded-xxs border border-[var(--border-default)] px-1.5 py-0.5 text-button-xxs text-[var(--text-disabled)]">
+          미리보기
+        </span>
         <DisciplineChip discipline="bjj_nogi" />
         <BeltBadge belt="blue" stripes={2} />
-        <span className="text-body-s-400 text-[var(--text-muted)]">서브미션 · 백 컨트롤</span>
+        <CategoryChip category="submission" size="sm" />
+        <PositionChip position="back_control" size="sm" />
       </div>
 
       <hr className="my-5 border-[var(--border-subtle)]" />
