@@ -1,15 +1,14 @@
+import { searchAll, SearchResults } from '@/features/global-search';
 import { EmptyState, SearchIcon } from '@/shared/ui';
 
 /**
- * 검색 결과 (F8 / Design §7e) — 워크어블 셸.
+ * 검색 결과 (F8 / Design §7e) — searchAll 연동.
  *
- * 상단 검색바에서 `?q=` 로 진입. 쿼리 표시 + 기술/세션/태그 그룹 헤더 셸 + EmptyState.
- * Next 16: searchParams는 Promise → async에서 await.
- * TODO(F8): q로 통합 검색(기술명/설명·세션메모/체육관·태그, pg_trgm 부분일치) +
- *   그룹별 결과 행 렌더 + 키워드 하이라이트.
+ * 상단 검색바에서 `?q=` 로 진입 → `searchAll(q)`(server util)로 통합 검색.
+ * 도먼시(인프라 last): 플래그 OFF/빈 쿼리면 searchAll이 Supabase 무접촉으로 [] 반환 →
+ * SearchResults가 쿼리 인지형 EmptyState를 보여준다(가짜 결과 없음). 인프라 후 실 RPC로 그룹 결과.
+ * Next 16: searchParams는 Promise → async에서 await (이 페이지는 그래서 ƒ Dynamic — 정상).
  */
-
-const GROUPS = ['기술', '세션', '태그'] as const;
 
 export default async function SearchPage({
   searchParams,
@@ -19,6 +18,8 @@ export default async function SearchPage({
   const sp = await searchParams;
   const raw = Array.isArray(sp.q) ? sp.q[0] : sp.q;
   const q = (raw ?? '').trim();
+
+  const results = q ? await searchAll(q) : [];
 
   return (
     <section aria-labelledby="search-heading" className="mx-auto max-w-3xl">
@@ -39,21 +40,7 @@ export default async function SearchPage({
       </p>
 
       {q ? (
-        // 그룹 헤더 셸 — 결과 데이터 연결 전 자리 (Design §7e)
-        <div className="flex flex-col gap-5">
-          {GROUPS.map((group) => (
-            <div key={group}>
-              <h2 className="mb-1 text-heading-xs text-[var(--text-strong)]">
-                {group} <span className="text-[var(--text-muted)]">(0)</span>
-              </h2>
-              <EmptyState
-                className="py-6"
-                title={`${group} 결과 없음`}
-                description="검색 기능 연동 후 일치하는 항목이 여기에 표시됩니다."
-              />
-            </div>
-          ))}
-        </div>
+        <SearchResults results={results} query={q} />
       ) : (
         <EmptyState
           icon={<SearchIcon width={40} height={40} />}
