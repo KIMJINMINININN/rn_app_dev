@@ -6,8 +6,9 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { createTechnique, updateTechnique } from '@/features/edit-technique';
-import { MediaPicker, type MediaDraft } from '@/features/media-upload';
+import { MediaPicker, persistMediaDrafts, type MediaDraft } from '@/features/media-upload';
 import { TagInput } from '@/features/tag-filter';
+import { fetchTechniqueMedia, type MediaAssetRef } from '@/entities/media';
 import {
   CATEGORY_LABEL,
   POSITION_LABEL,
@@ -138,6 +139,15 @@ export function TechniqueForm({ mode, techniqueId }: TechniqueFormProps) {
     enabled: isEdit && isAuthEnabled(),
   });
 
+  // 편집 시 기존 연결 미디어(prefill #6-4) — 업로드 자산은 File 복원 불가하므로 드래프트가 아닌
+  // "유지/제거" 참조로 다룬다. keptMedia(유지분) + 새 mediaDrafts = 저장 시 desired 미디어 집합.
+  const { data: existingMedia } = useQuery({
+    queryKey: ['technique', techniqueId, 'media'],
+    queryFn: () => fetchTechniqueMedia(techniqueId!),
+    enabled: isEdit && isAuthEnabled(),
+  });
+  const [keptMedia, setKeptMedia] = useState<MediaAssetRef[]>([]);
+
   // 같은 기술을 두 번 채워 사용자 편집을 덮어쓰지 않도록, prefill 한 기술 id를 기억한다.
   // (existing 이 새 id로 바뀌면 다시 채운다 — id 변화 기준 1회.)
   const prefilledIdRef = useRef<string | null>(null);
@@ -167,6 +177,15 @@ export function TechniqueForm({ mode, techniqueId }: TechniqueFormProps) {
     setTagNames(existingTagNames);
   }, [existingTagNames, isEdit, techniqueId]);
 
+  // 미디어 prefill(#6-4) — 기존 연결 미디어를 keptMedia로 1회 채운다(이후 사용자가 ×로 제거 가능).
+  const prefilledMediaIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!isEdit || !techniqueId || existingMedia === undefined) return;
+    if (prefilledMediaIdRef.current === techniqueId) return;
+    prefilledMediaIdRef.current = techniqueId;
+    setKeptMedia(existingMedia);
+  }, [existingMedia, isEdit, techniqueId]);
+
   // 종목에 따라 가능한 분류 목록(PRD §4.2). 종목 미선택이면 빈 목록.
   const categoryOptions = useMemo<TechniqueCategory[]>(
     () => (discipline ? categoriesForDiscipline(discipline) : []),
@@ -177,14 +196,14 @@ export function TechniqueForm({ mode, techniqueId }: TechniqueFormProps) {
   const showStriking = discipline === 'striking';
 
   // 이름·종목·분류가 필수(***) — 셋이 채워지고 제출 중이 아닐 때만 저장 가능.
-  // 편집 모드에선 태그 prefill(existingTagNames)이 로드되기 전 저장을 막는다 — 빈 목록 재동기화로
-  // 기존 태그가 지워지는 race 방지(#6-1). create 모드는 prefill 없으니 영향 없음.
+  // 편집 모드에선 태그·미디어 prefill이 로드되기 전 저장을 막는다 — 빈 집합 재동기화로
+  // 기존 연결이 끊기는 race 방지(#6-1·#6-4). create 모드는 prefill 없으니 영향 없음.
   const canSave =
     name.trim() !== '' &&
     discipline !== '' &&
     category !== '' &&
     !pending &&
-    (!isEdit || existingTagNames !== undefined);
+    (!isEdit || (existingTagNames !== undefined && existingMedia !== undefined));
 
   /** 종목 변경 — 현재 분류가 새 종목에서 유효하지 않으면 리셋. 벨트/타격 필드도 비-해당 종목이면 비운다. */
   function handleDisciplineChange(next: Discipline | '') {
@@ -238,21 +257,31 @@ export function TechniqueForm({ mode, techniqueId }: TechniqueFormProps) {
     }
     const payload: TechniqueInsert = parsed.data;
 
-    // TODO(#6-3): mediaDrafts → media_assets 생성 + 기술 연결(media_links). 현재는 드래프트만 수집.
-    void mediaDrafts;
-
     startTransition(async () => {
-      // 태그 이름은 액션에 함께 넘긴다(#6-1) — 서버가 tags 행 생성/조회 후 taggables 연결/재동기화.
+      // 미디어 먼저 영속화(#6-4): 새 드래프트(youtube=row, upload=sign→PUT→row) → 새 media_id[].
+      // desired = 유지한 기존 미디어 id + 새 id. 편집은 이 집합으로 media_links 재동기화, 생성은 그대로 연결.
+      let desiredMediaIds: string[];
+      try {
+        const newMediaIds = await persistMediaDrafts(mediaDrafts);
+        desiredMediaIds = [...keptMedia.map((m) => m.id), ...newMediaIds];
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : '미디어 업로드에 실패했습니다.');
+        return;
+      }
+
+      // 태그 이름·미디어 id를 액션에 함께 넘긴다(#6-1·#6-4) — 서버가 taggables/media_links 연결/재동기화.
       const res =
         mode === 'edit' && techniqueId
-          ? await updateTechnique(techniqueId, payload, tagNames)
-          : await createTechnique(payload, tagNames);
+          ? await updateTechnique(techniqueId, payload, tagNames, desiredMediaIds)
+          : await createTechnique(payload, tagNames, desiredMediaIds);
 
       if (res.ok) {
         // 목록 쿼리(['techniques',*])를 무효화해 라이브러리가 새/수정 기술로 갱신되게 한다(navigation 전).
         queryClient.invalidateQueries({ queryKey: ['techniques'] });
         // 태그 갱신(#6-1): 새 태그 생성/연결 변화 → 자동완성·태그 보기 무효화.
         queryClient.invalidateQueries({ queryKey: ['tags'] });
+        // 상세/연결 갱신(#6-4): 이 기술의 미디어·태그·역참조 캐시 무효화(편집 후 재진입 시 최신).
+        if (techniqueId) queryClient.invalidateQueries({ queryKey: ['technique', techniqueId] });
         toast.success('저장됨');
         if (mode === 'create') {
           router.push('/techniques');
@@ -427,12 +456,41 @@ export function TechniqueForm({ mode, techniqueId }: TechniqueFormProps) {
         />
       </Field>
 
-      {/* ── 미디어 (F5) — 유튜브=live, 업로드=초안+프리뷰(저장은 인프라 후) ── */}
+      {/* ── 미디어 (F5/#6-4) — 편집: 기존 연결 유지/제거 + 공통: 새 첨부(유튜브 live / 업로드) ── */}
       <section className="flex flex-col gap-2 border-t border-[var(--border-subtle)] pt-4">
         <SectionLabel>미디어</SectionLabel>
+
+        {/* 편집 모드: 기존 연결 미디어 — × 로 제거(저장 시 연결만 끊김, 자산은 보존). */}
+        {keptMedia.length > 0 && (
+          <ul className="flex flex-col gap-1.5">
+            {keptMedia.map((m) => (
+              <li
+                key={m.id}
+                className="flex items-center gap-2 rounded-xs border border-[var(--border-subtle)] bg-[var(--surface-base)] px-2.5 py-1.5"
+              >
+                <span className="min-w-0 flex-1 truncate text-body-s-400 text-[var(--text-default)]">
+                  {m.kind === 'youtube' ? 'YouTube 영상' : '내 영상'}
+                  {m.title ? ` · ${m.title}` : ''}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setKeptMedia((prev) => prev.filter((x) => x.id !== m.id))}
+                  aria-label="연결된 미디어 제거"
+                  className="shrink-0 rounded-full p-1 text-[var(--text-muted)] outline-none transition-colors hover:text-[var(--danger)] focus-visible:shadow-[var(--ring-focus)]"
+                >
+                  <svg width={10} height={10} viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" aria-hidden="true">
+                    <path d="M1.5 1.5l7 7M8.5 1.5l-7 7" />
+                  </svg>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {/* 새 첨부(드래프트) — 저장 시 업로드/행 생성 후 기술에 연결. */}
         <MediaPicker value={mediaDrafts} onChange={setMediaDrafts} />
         <p className="text-body-xs-400 text-[var(--text-muted)]">
-          첨부한 미디어는 인프라 연결 후 기술과 함께 저장됩니다.
+          유튜브 링크 또는 60초·100MB 이내 영상(mp4·mov)을 첨부할 수 있어요.
         </p>
       </section>
 

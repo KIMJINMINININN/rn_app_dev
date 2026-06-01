@@ -15,9 +15,11 @@ import { resolveTagIds } from '@/entities/tag';
  * 인프라 단계에서 NEXT_PUBLIC_AUTH_ENABLED 를 켜면 그대로 INSERT/UPDATE 가 동작한다.
  *
  * techniques.insert / update 는 RLS(소유자 한정)로 보호된다 — user_id 조건/페이로드는 getUser()로 채운다.
- * 태그(F7)는 tagNames로 받아 resolveTagIds(이름→tags 행)로 해석 후 taggables에 연결한다(#6-1):
- *  - 생성: 새 taggables insert. 편집: 기존 기술 taggables 전체 삭제 후 현재 선택분 재삽입(재동기화).
- * 미디어(F5) 연결(media_links)은 영속화 후속이라 여기서 다루지 않는다(위젯 폼이 드래프트만 수집).
+ * 태그(F7)는 tagNames로 받아 resolveTagIds(이름→tags 행)로 해석 후 taggables에 연결한다(#6-1).
+ * 미디어(F5)는 mediaIds(이미 생성된 media_assets id)를 받아 media_links에 연결한다(#6-4):
+ *  - 업로드/youtube 자산 생성은 클라(persistMediaDrafts)가 먼저 끝내고 id만 넘긴다.
+ *  - 생성: media_links insert. 편집: 기존 기술 taggables/media_links 전체 삭제 후 desired 재삽입(재동기화).
+ *    편집 폼이 기존 태그·미디어를 prefill하므로 빈 배열로 실수로 지워지지 않는다(canSave 게이트).
  */
 
 /** 기술 액션 결과 — 클라이언트 폼이 토스트 분기(ok/dormant/error)에 사용. */
@@ -35,6 +37,7 @@ const INFRA_DISABLED_MESSAGE =
 export async function createTechnique(
   rawInput: TechniqueInsert,
   tagNames: string[] = [],
+  mediaIds: string[] = [],
 ): Promise<TechniqueActionResult> {
   const parsed = techniqueInsertSchema.safeParse(rawInput);
   if (!parsed.success) {
@@ -71,6 +74,14 @@ export async function createTechnique(
     if (tagErr) return { ok: false, error: tagErr.message };
   }
 
+  // 미디어 연결(#6-4): 이미 생성된 media_assets id → media_links insert. 새 기술이라 충돌 없음.
+  if (mediaIds.length > 0) {
+    const { error: mediaErr } = await supabase
+      .from('media_links')
+      .insert(mediaIds.map((media_id) => ({ media_id, technique_id: data.id })));
+    if (mediaErr) return { ok: false, error: mediaErr.message };
+  }
+
   revalidatePath('/techniques');
   return { ok: true, techniqueId: data.id };
 }
@@ -83,6 +94,7 @@ export async function updateTechnique(
   id: string,
   rawInput: TechniqueInsert,
   tagNames: string[] = [],
+  mediaIds: string[] = [],
 ): Promise<TechniqueActionResult> {
   const parsed = techniqueInsertSchema.safeParse(rawInput);
   if (!parsed.success) {
@@ -122,6 +134,20 @@ export async function updateTechnique(
       .from('taggables')
       .insert(tagIds.map((tag_id) => ({ tag_id, technique_id: id })));
     if (insErr) return { ok: false, error: insErr.message };
+  }
+
+  // 미디어 재동기화(#6-4): 기존 media_links 전체 삭제 후 desired(유지된 기존 id + 새로 업로드된 id) 재삽입.
+  // 자산(media_assets)은 지우지 않는다 — 링크만 재동기화(업로드 자산 재사용/고아 허용, resolveTagIds와 동일).
+  // 폼이 기존 미디어를 prefill하므로 빈 배열로 실수로 끊기지 않는다(canSave 게이트).
+  const { error: mediaDelErr } = await supabase.from('media_links').delete().eq('technique_id', id);
+  if (mediaDelErr) {
+    return { ok: false, error: mediaDelErr.message };
+  }
+  if (mediaIds.length > 0) {
+    const { error: mediaInsErr } = await supabase
+      .from('media_links')
+      .insert(mediaIds.map((media_id) => ({ media_id, technique_id: id })));
+    if (mediaInsErr) return { ok: false, error: mediaInsErr.message };
   }
 
   revalidatePath('/techniques');
