@@ -14,6 +14,7 @@
 - [x] **1. Tailwind red/black/white 재테마** + 다크모드/belt/discipline 토큰 — `tailwind-theme.css` `f1c2567` (build ✅)
 - [x] **2. Supabase 클라이언트 토대** `shared/api/supabase/{server,client,admin,index,types}` + db 스크립트 5종 + `.env.example` — (build·typecheck ✅, DB 미적용)
 - [x] **3. entity 슬라이스 6종** rank(+BeltBadge)·technique(+CategoryChip)·session·media(+youtube)·tag(+TagChip)·discipline(+DisciplineChip) + 공용 `shared/lib/zod.ts` + 테마 dark variant — 적대적 리뷰+architect APPROVED, build·typecheck ✅ (api/ 쿼리는 인프라 단계)
+- [x] **5. 인증 골격** (F1) login/signup/logout Server Action + client form + `shared/ui/Input` + `src/proxy.ts`(Next 16 세션 미들웨어) + env-gated 가드/프로필 — `d44df32` (실동작은 인프라, 랭크/프로필 편집은 후속) *(2026-06-01)*
 - [x] **4. 앱 셸 + 내비 + 글로벌 검색바** `widgets/app-shell`(SideNav[데스크톱]→BottomNav[모바일] 반응형·TopBar+SearchBar·ThemeToggle·빨강 FAB) + `shared/ui`(Button/IconButton/EmptyState/Skeleton/theme[FOUC]) + `app/{(app),(auth)}` 라우트 스캐폴드(걸어다니는 셸) + 루트 layout `data-theme`/FOUC 주입 + Providers(QueryClient) — typecheck·build ✅, FSD 깨끗, 의존성 0 추가 *(커밋 대기, DB/auth는 스텁)*
 
 ---
@@ -48,8 +49,13 @@
 - [x] `shared/ui` 원자: Button(cva)·IconButton·EmptyState·Skeleton·theme(ThemeProvider+FOUC 스크립트+zustand) — 1번 후속 `data-theme` 주입·FOUC 방지 여기서 처리
 - ↪ 후속(각 기능 단계): FAB→세션에디터(F3) · "오늘로"→`/calendar?date=`(F2) · 인증가드 Supabase 연결(F1) · 페이지 실데이터 페치(F2/F4/F8) · Toaster(sonner) 도입(F3)
 
-### 5. 인증 (F1) — Develop §10
-- [ ] `(auth)/login`·`signup` UI + Supabase auth(server actions) + 미들웨어 (profiles/user_ranks 연동)
+### 5. 🟡 인증 **골격** (F1) — Develop §10  *(골격 완료 `d44df32`, 실동작은 인프라)*
+- [x] `(auth)/actions.ts` login/signup/logout Server Action(이메일+비번, zod, revalidate+redirect, signup은 profiles 미접촉=DB 트리거 위임)
+- [x] `(auth)/login·signup` client form(useActionState) + `shared/ui/Input` 원자
+- [x] `src/proxy.ts` Next 16 proxy(구 middleware) — `@supabase/ssr` 세션 갱신 + matcher
+- [x] `(app)/layout` 가드 + `profile` 계정정보/로그아웃 — **env-gated**(`NEXT_PUBLIC_AUTH_ENABLED`, 기본 false). 플래그 OFF면 Supabase 무접촉→(app) 정적·셸 탐색 유지, 인프라 때 ON으로 자동 활성화
+- ↪ 남음: **실 로그인 동작=인프라**(실 Supabase + 플래그 ON) · 표시명/타임존/**종목별 랭크 편집 UI(F1-AC3/AC4, user_ranks upsert)** · 소셜 로그인(T6) · email confirm 분기 확정(T5) · 모바일 토큰 핸드오프(§10)
+- ⚠️ 인프라 메모: `.env.local`에 **냉장고(레퍼런스) 프로젝트의 stale Supabase 값**(+COUPANG/KURLY/BAEMIN 플래그) 잔존 → 인프라 때 MMA 키로 **교체** 필요
 
 ### 6. P0 기능 — Develop §12 (빌드 순서), 화면 Design §7
 - [ ] F2 캘린더(월간+하루상세, react-calendar 커스텀 + `calendar_day_summary`)
