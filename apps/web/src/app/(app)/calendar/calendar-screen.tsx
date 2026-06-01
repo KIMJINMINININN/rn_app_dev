@@ -24,8 +24,8 @@ import { useSessionEditorStore } from '@/shared/model/session-editor-store';
  * AUTH OFF(개발 셸)면 비활성 → 기본값({}/[])이 유지되어 휴면 빈 상태(빈 달 + EmptyState)로
  * 폴백한다(Supabase 호출 없음, infra-last 보존). 저장(F3)은 ['calendar'] 키를 invalidate해 갱신.
  *
- * 날짜 처리는 전부 클라이언트(dayjs/new Date) → 서버 page는 searchParams를 읽지 않는다.
- * (쿼리는 클라이언트 RLS 호출이라 라우트는 동적 `ƒ`로 — AUTH ON 상태, layout 주석 참고.)
+ * 날짜 처리는 전부 클라이언트(dayjs/new Date)지만, 딥링크 초기값(?date)은 서버 page가 읽어
+ * `initialDateISO` prop으로 내려준다(useSearchParams/Suspense 회피). (app)은 점등 후 동적 `ƒ`.
  */
 
 /** dayjs 기본 로케일이 영어라 월 라벨은 직접 조립("2026년 5월"). */
@@ -34,18 +34,30 @@ function monthLabel(date: Date): string {
   return `${d.year()}년 ${d.month() + 1}월`;
 }
 
-export function CalendarScreen() {
-  // 초기값: 오늘(선택) / 이번 달(표시). 클라이언트에서 결정 → 라우트 정적 유지.
-  const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
+/** 딥링크 초기 선택일 — 유효한 'YYYY-MM-DD'면 그 날, 아니면 오늘. (page가 형식 검증 후 내려줌) */
+function resolveInitialDate(iso: string | null | undefined): Date {
+  if (iso) {
+    const d = dayjs(iso);
+    if (d.isValid()) return d.toDate();
+  }
+  return new Date();
+}
+
+export interface CalendarScreenProps {
+  /** 딥링크 `?date=YYYY-MM-DD` 초기 선택일(검증된 형식 또는 null). 없으면 오늘. */
+  initialDateISO?: string | null;
+}
+
+export function CalendarScreen({ initialDateISO = null }: CalendarScreenProps) {
+  // 초기값: 딥링크 date(선택일) / 그 달(표시). page가 key로 remount하므로 mount-time 1회 결정으로 충분.
+  const initialDate = resolveInitialDate(initialDateISO);
+  const [selectedDate, setSelectedDate] = useState<Date>(initialDate);
   const [activeStartDate, setActiveStartDate] = useState<Date>(() =>
-    dayjs().startOf('month').toDate(),
+    dayjs(initialDate).startOf('month').toDate(),
   );
 
   // 세션 에디터 오픈(F3) — shared 오버레이 스토어. 선택 날짜를 프리셋한다.
   const openEditor = useSessionEditorStore((s) => s.open);
-
-  // TODO(deep-link): useSearchParams()로 ?date=YYYY-MM-DD 초기값 수용(<Suspense> 경계 필요).
-  //   지금은 빌드 정적 유지를 위해 기본 오늘로 두고 딥링크는 보류.
 
   // 월간 그리드 가시 범위 — 6주 그리드의 이웃 달 셀까지 점이 찍히도록 달 경계 ±7일로 넓힌다.
   const rangeStart = dayjs(activeStartDate).startOf('month').subtract(7, 'day').format('YYYY-MM-DD');
