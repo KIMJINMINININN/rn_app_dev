@@ -306,27 +306,32 @@ function LoadingBody() {
 /**
  * 역참조 세션 한 줄 — 날짜 + 종목 칩(들) + 수업유형 (Design §7d).
  * SessionCard(widget) 풀 카드 대신, 상세 페이지 맥락에 맞는 컴팩트한 한 줄 항목.
- * 클릭 시 캘린더 그 날짜로(딥링크는 F2 TODO이므로 현재는 비링크 표시 항목).
+ * 클릭 시 캘린더 그 날짜로 진입(/calendar?date= 딥링크 — page가 초기 선택일로 수용).
  */
 function ReferencedSessionRow({ session }: { session: SessionWithDisciplines }) {
   const classTypeLabel = session.class_type ? CLASS_TYPE_LABELS[session.class_type] : null;
 
   return (
-    <li className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-m border border-[var(--border-subtle)] bg-[var(--surface-raised)] px-3 py-2 shadow-[var(--shadow-card)]">
-      <span className="text-body-s-500 text-[var(--text-strong)] tabular-nums">
-        {sessionDateLabel(session.trained_on)}
-      </span>
-      <span className="flex flex-wrap items-center gap-1">
-        {session.disciplines.map((d) => (
-          <DisciplineChip key={d} discipline={d} size="xs" />
-        ))}
-      </span>
-      {classTypeLabel && (
-        <span className="text-body-xs-500 text-[var(--text-muted)]">
-          <span aria-hidden="true" className="mr-2 text-[var(--text-disabled)]">·</span>
-          {classTypeLabel}
+    <li>
+      <Link
+        href={`/calendar?date=${encodeURIComponent(session.trained_on)}`}
+        className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-m border border-[var(--border-subtle)] bg-[var(--surface-raised)] px-3 py-2 shadow-[var(--shadow-card)] outline-none transition-[colors,box-shadow] duration-[var(--duration-fast)] ease-[var(--ease-standard)] pointer-hover:border-[var(--border-strong)] pointer-hover:shadow-[var(--shadow-e3)] focus-visible:shadow-[var(--ring-focus)]"
+      >
+        <span className="text-body-s-500 text-[var(--text-strong)] tabular-nums">
+          {sessionDateLabel(session.trained_on)}
         </span>
-      )}
+        <span className="flex flex-wrap items-center gap-1">
+          {session.disciplines.map((d) => (
+            <DisciplineChip key={d} discipline={d} size="xs" />
+          ))}
+        </span>
+        {classTypeLabel && (
+          <span className="text-body-xs-500 text-[var(--text-muted)]">
+            <span aria-hidden="true" className="mr-2 text-[var(--text-disabled)]">·</span>
+            {classTypeLabel}
+          </span>
+        )}
+      </Link>
     </li>
   );
 }

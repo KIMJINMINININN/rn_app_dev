@@ -9,21 +9,21 @@
 
 ## 🟢 내일 시작점 (여기부터)
 
-**어디까지 왔나(2026-06-02):** 인프라 점등(실 Supabase `the-others-mma`, `AUTH_ENABLED=true`) + 프리셋 0016 라이브. **핵심 루프 전부 라이브** + **미디어 완성**:
-캘린더 · 기술(목록/상세/생성/편집) · 프로필/랭크 · 태그(attach+필터+표시) · 세션↔다룬기술 · **세션 미디어**(업로드 sign→PUT→media_assets + 서명URL 재생) · **기술 미디어**(생성/편집 유지·제거 + 상세 표시). 마지막 push = `cf33741`. 빌드/타입/린트/gitleaks 모두 green.
+**어디까지 왔나(2026-06-02):** 인프라 점등(실 Supabase `the-others-mma`, `AUTH_ENABLED=true`) + 프리셋 0016 라이브. **모든 P0 기능 코드 완성** — 핵심 루프 + 미디어 + 잔손질 전부 라이브:
+캘린더 · 기술(목록/상세/생성/편집) · 프로필/랭크 · 태그(attach+필터+표시) · 세션↔다룬기술(+그날메모) · 세션 미디어 · 기술 미디어 · 쿼리 에러 토스트 · `/calendar?date=` 딥링크. 마지막 push = `67e05be`(+역참조 링크). 빌드/타입/린트/gitleaks 모두 green.
 
-**✅ 어제 끝(2026-06-01 EOD 이후) — 🟢 1·5번 완료:**
-- ~~1. 기술 미디어 영속화~~ ✅ `881704c` — 생성=media_links insert / 편집=기존 prefill(keptMedia)+×제거+desired 재동기화(자산 보존, 링크만). canSave가 prefill 전 저장 차단.
-- ~~5. 기술 상세 미디어~~ ✅ `cf33741` — TechniqueDetailView MediaStub→유튜브 임베드/업로드 재생.
+**✅ 완료된 잔손질 (2026-06-02):**
+- ~~기술 미디어 영속화~~ ✅ `881704c`·`cf33741` — 생성/편집 유지·제거 재동기화 + 상세 표시.
+- ~~쿼리 에러 핸들링~~ ✅ `3db3cd8` — QueryCache 전역 onError 토스트(+재시도, queryHash dedupe, 서명URL 제외).
+- ~~다룬 기술 그날 메모 입력~~ ✅ `9e98ed7` — TechniquePicker 행별 day_memo input.
+- ~~/calendar?date= 딥링크~~ ✅ `67e05be` — page가 검증·remount key, screen이 초기 선택일 수용 + 역참조 세션 행 링크.
 
-**다음 할 일 (작은 잔손질 — 우선순위 순):**
-1. **쿼리 에러 핸들링 폴리시** — 현재 useQuery 실패 시 조용히 빈 상태. 실패 시 토스트/재시도 affordance(특히 미디어 업로드·서명URL). 공통 패턴 하나 정해 적용.
-2. **(소) 다룬 기술 그날 메모(day_memo_md) 입력** — TechniquePicker에 선택 기술별 메모 input. RPC·스키마·표시(SessionCard)는 이미 day_memo 지원, 입력 UI만 추가.
-3. **(소) `/calendar?date=` 딥링크** — 검색/역참조 세션 결과 클릭 시 그 날짜로 진입. 캘린더 screen이 searchParams 읽도록.
+**다음 할 일 — 🟥 인프라 마무리(코드 잔손질 없음, 사장님 액션 위주):**
+1. **Vercel 배포(⑥)** — 새 Vercel 프로젝트 + env(NEXT_PUBLIC_SUPABASE_*, SUPABASE_SECRET_KEY, NEXT_PUBLIC_AUTH_ENABLED=true 등) + Supabase Auth site_url/redirect에 Vercel 도메인 등록.
+2. **모바일** `EXPO_PUBLIC_CLIENT_URL`을 실 Vercel 도메인으로(현재 로컬 dev URL).
+3. (선택) 썸네일 생성(T2)·독립 레포 추출 등 P1.
 
-**그 다음(인프라 마무리):** Vercel 배포(⑥ — 새 프로젝트, env, Supabase Auth site_url/redirect) + 모바일 `EXPO_PUBLIC_CLIENT_URL`을 실 Vercel 도메인으로.
-
-**재개 명령:** `git log --oneline -8` 로 최근 커밋 확인 → 위 1번(쿼리 에러 핸들링)부터.
+**재개 명령:** 코드는 기능 완성 단계. 다음은 인프라(Vercel) — 사장님 대시보드 작업 위주. 새 기능/수정 있으면 `git log --oneline -8` 확인 후 시작.
 
 ---
 
