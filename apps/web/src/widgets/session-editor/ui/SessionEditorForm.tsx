@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 
 import { logSession, logSessionInputSchema } from '@/features/log-session';
 import { MediaPicker, type MediaDraft } from '@/features/media-upload';
+import { TagInput } from '@/features/tag-filter';
 import { CLASS_TYPE_LABELS } from '@/entities/session';
 import { CLASS_TYPES, type ClassType, type Discipline } from '@/shared/model/enums';
 import { Button } from '@/shared/ui';
@@ -83,6 +84,8 @@ export function SessionEditorForm({ initialDate, onDone }: SessionEditorFormProp
   const [detailsOpen, setDetailsOpen] = useState(false);
   // 미디어 초안(F5) — 영속화 전이라 RPC로 흘리지 않고 로컬 수집만(아래 handleSave seam 참고).
   const [mediaDrafts, setMediaDrafts] = useState<MediaDraft[]>([]);
+  // 태그 이름(F7) — TagInput으로 실제 수집되지만 영속화(이름→tags 행→tag_id)는 인프라 후(아래 handleSave seam).
+  const [tagNames, setTagNames] = useState<string[]>([]);
 
   const [pending, startTransition] = useTransition();
 
@@ -101,6 +104,7 @@ export function SessionEditorForm({ initialDate, onDone }: SessionEditorFormProp
       memo_md: memo.trim() || null,
       rating: null,
       techniques: [],
+      // TODO(infra): tagNames → tags upsert(이름→행) → tag_id[] 를 여기 tag_ids 에 매핑.
       tag_ids: [],
       // TODO(infra): mediaDrafts → media_assets 생성(youtube=row, upload=sign-upload→PUT→row) → media_id[] 를 여기 media 에 매핑.
       media: [],
@@ -274,16 +278,19 @@ export function SessionEditorForm({ initialDate, onDone }: SessionEditorFormProp
         </p>
       </section>
 
-      {/* ── 태그 (STUB — F7) ── */}
+      {/* ── 태그 (F7) — 자유 태그 입력은 live, 저장은 인프라 후(tags/taggables 행 필요) ── */}
+      {/* TagInput이 label prop으로 연결된 <label>을 직접 렌더하므로 별도 SectionLabel 불필요(접근성 이름 연결). */}
       <section className="flex flex-col gap-2 border-t border-[var(--border-subtle)] pt-4">
-        <SectionLabel>태그</SectionLabel>
-        <div>
-          <Button variant="secondary" size="sm" disabled title="태그(F7) 연동 후">
-            + 태그
-          </Button>
-        </div>
-        <p className="text-body-xs-400 text-[var(--text-disabled)]">
-          태그(F7) 연동 후 사용할 수 있어요.
+        <TagInput
+          value={tagNames}
+          onChange={setTagNames}
+          allowCreate
+          suggestions={[]}
+          label="태그"
+          placeholder="태그 추가 (예: 백테이크)"
+        />
+        <p className="text-body-xs-400 text-[var(--text-muted)]">
+          태그는 인프라 연결 후 세션과 함께 저장됩니다.
         </p>
       </section>
 
