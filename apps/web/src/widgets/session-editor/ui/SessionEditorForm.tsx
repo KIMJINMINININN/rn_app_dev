@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
 
 import { logSession, logSessionInputSchema } from '@/features/log-session';
+import { MediaPicker, type MediaDraft } from '@/features/media-upload';
 import { CLASS_TYPE_LABELS } from '@/entities/session';
 import { CLASS_TYPES, type ClassType, type Discipline } from '@/shared/model/enums';
 import { Button } from '@/shared/ui';
@@ -22,8 +23,10 @@ import type { SessionEditorMode } from '@/shared/model/session-editor-store';
  * action이 네트워크 호출 없이 안내를 반환하고, 폼은 토스트로 알린 뒤 시트를 닫지 않는다
  * (사용자가 셸을 계속 탐색하도록). 인프라 단계에서 플래그를 켜면 그대로 RPC가 동작한다.
  *
- * 다룬 기술(F4)·미디어(F5)·태그(F7)는 아직 연동 전이라 **비활성 스텁 섹션**으로만
- * 렌더한다(SessionCard 스텁 스타일 — 가짜 입력/로컬 배열 금지). RPC 계약(빈 배열)은 유지.
+ * 미디어(F5)는 실 입력 기반 MediaPicker로 활성화됐다 — 유튜브는 인프라 전에도 완전 동작(임베드/썸네일),
+ * 업로드는 초안+프리뷰만 수집(저장은 인프라 후, media_assets 행 필요). 단 영속화 전이라 드래프트는
+ * 아직 RPC로 흘리지 않는다(media: [] 유지, 아래 seam 주석). 다룬 기술(F4)·태그(F7)는 연동 전이라
+ * **비활성 스텁 섹션**으로 남는다(SessionCard 스텁 스타일 — 가짜 입력/로컬 배열 금지). RPC 계약(빈 배열)은 유지.
  *
  * useActionState 대신 useTransition을 쓴다 — FormData가 아닌 풍부한 로컬 상태를
  * 직접 직렬화해 action에 넘기기 때문(인증 폼과 다른 패턴).
@@ -78,6 +81,8 @@ export function SessionEditorForm({ initialDate, onDone }: SessionEditorFormProp
   const [partners, setPartners] = useState('');
   const [memo, setMemo] = useState('');
   const [detailsOpen, setDetailsOpen] = useState(false);
+  // 미디어 초안(F5) — 영속화 전이라 RPC로 흘리지 않고 로컬 수집만(아래 handleSave seam 참고).
+  const [mediaDrafts, setMediaDrafts] = useState<MediaDraft[]>([]);
 
   const [pending, startTransition] = useTransition();
 
@@ -97,6 +102,7 @@ export function SessionEditorForm({ initialDate, onDone }: SessionEditorFormProp
       rating: null,
       techniques: [],
       tag_ids: [],
+      // TODO(infra): mediaDrafts → media_assets 생성(youtube=row, upload=sign-upload→PUT→row) → media_id[] 를 여기 media 에 매핑.
       media: [],
     };
     const parsed = logSessionInputSchema.safeParse(candidate);
@@ -259,19 +265,12 @@ export function SessionEditorForm({ initialDate, onDone }: SessionEditorFormProp
         </p>
       </section>
 
-      {/* ── 미디어 (STUB — F5) ── */}
+      {/* ── 미디어 (F5) — 유튜브=live, 업로드=초안+프리뷰(저장은 인프라 후) ── */}
       <section className="flex flex-col gap-2 border-t border-[var(--border-subtle)] pt-4">
         <SectionLabel>미디어</SectionLabel>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="ghost" size="sm" disabled title="미디어 업로드(F5) 연동 후">
-            📹 촬영/업로드
-          </Button>
-          <Button variant="ghost" size="sm" disabled title="미디어 업로드(F5) 연동 후">
-            ▶ 유튜브 링크
-          </Button>
-        </div>
-        <p className="text-body-xs-400 text-[var(--text-disabled)]">
-          미디어 업로드(F5) 연동 후 사용할 수 있어요.
+        <MediaPicker value={mediaDrafts} onChange={setMediaDrafts} />
+        <p className="text-body-xs-400 text-[var(--text-muted)]">
+          첨부한 미디어는 인프라 연결 후 세션과 함께 저장됩니다.
         </p>
       </section>
 
