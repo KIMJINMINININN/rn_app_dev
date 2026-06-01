@@ -13,7 +13,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm rounded-l border border-[var(--border-subtle)] bg-[var(--surface-base)] p-6 shadow-[var(--shadow-card)]">
         <h1 className="text-heading-l text-[var(--text-strong)]">로그인</h1>
         <p className="mt-1 text-body-s-400 text-[var(--text-muted)]">
-          트레이닝 저널에 로그인하세요.
+          MatLog에 로그인하세요.
         </p>
 
         <LoginForm />
