@@ -9,19 +9,21 @@
 
 ## 🟢 내일 시작점 (여기부터)
 
-**어디까지 왔나(2026-06-01 EOD):** 인프라 점등 완료(실 Supabase `the-others-mma`, `AUTH_ENABLED=true`). 프리셋 0016 db:push 완료(신규가입 라이브). 그 위에서 **읽기/쓰기 와이어링이 핵심 루프 전부 라이브**:
-캘린더 · 기술(목록/상세/생성/편집) · 프로필/랭크 · 태그(attach+필터+표시) · 세션↔다룬기술 · **세션 미디어(업로드 sign→PUT→media_assets + 서명URL 재생)**. 마지막 push = `715d00d`. 빌드/타입/린트/gitleaks 모두 green.
+**어디까지 왔나(2026-06-02):** 인프라 점등(실 Supabase `the-others-mma`, `AUTH_ENABLED=true`) + 프리셋 0016 라이브. **핵심 루프 전부 라이브** + **미디어 완성**:
+캘린더 · 기술(목록/상세/생성/편집) · 프로필/랭크 · 태그(attach+필터+표시) · 세션↔다룬기술 · **세션 미디어**(업로드 sign→PUT→media_assets + 서명URL 재생) · **기술 미디어**(생성/편집 유지·제거 + 상세 표시). 마지막 push = `cf33741`. 빌드/타입/린트/gitleaks 모두 green.
+
+**✅ 어제 끝(2026-06-01 EOD 이후) — 🟢 1·5번 완료:**
+- ~~1. 기술 미디어 영속화~~ ✅ `881704c` — 생성=media_links insert / 편집=기존 prefill(keptMedia)+×제거+desired 재동기화(자산 보존, 링크만). canSave가 prefill 전 저장 차단.
+- ~~5. 기술 상세 미디어~~ ✅ `cf33741` — TechniqueDetailView MediaStub→유튜브 임베드/업로드 재생.
 
 **다음 할 일 (작은 잔손질 — 우선순위 순):**
-1. **기술 미디어 영속화** — 기술 에디터 `mediaDrafts`가 아직 저장 안 됨(`void mediaDrafts`). 생성은 `persistMediaDrafts`+`media_links(technique_id)`로 쉽게 붙음. ⚠️ **편집 prefill 난제**: 저장된 업로드 자산을 File로 되살릴 수 없음 → 편집 모드는 "기존 미디어 표시 + 추가/삭제" 모델 별도 설계 필요(태그처럼 단순 재동기화 불가). 생성 경로부터 붙이고 편집은 후속.
-2. **쿼리 에러 핸들링 폴리시** — 현재 useQuery 실패 시 조용히 빈 상태. 실패 시 토스트/재시도 affordance(특히 미디어 업로드·서명URL). 공통 패턴 하나 정해 적용.
-3. **(소) 다룬 기술 그날 메모(day_memo_md) 입력** — TechniquePicker에 선택 기술별 메모 input. RPC·스키마·표시(SessionCard)는 이미 day_memo 지원, 입력 UI만 추가.
-4. **(소) `/calendar?date=` 딥링크** — 검색/역참조 세션 결과 클릭 시 그 날짜로 진입. 캘린더 screen이 searchParams 읽도록.
-5. **기술 상세 미디어** — 현재 MediaStub("준비 중"). 기술 미디어(1번) 붙으면 기술에 연결된 media_assets 표시.
+1. **쿼리 에러 핸들링 폴리시** — 현재 useQuery 실패 시 조용히 빈 상태. 실패 시 토스트/재시도 affordance(특히 미디어 업로드·서명URL). 공통 패턴 하나 정해 적용.
+2. **(소) 다룬 기술 그날 메모(day_memo_md) 입력** — TechniquePicker에 선택 기술별 메모 input. RPC·스키마·표시(SessionCard)는 이미 day_memo 지원, 입력 UI만 추가.
+3. **(소) `/calendar?date=` 딥링크** — 검색/역참조 세션 결과 클릭 시 그 날짜로 진입. 캘린더 screen이 searchParams 읽도록.
 
 **그 다음(인프라 마무리):** Vercel 배포(⑥ — 새 프로젝트, env, Supabase Auth site_url/redirect) + 모바일 `EXPO_PUBLIC_CLIENT_URL`을 실 Vercel 도메인으로.
 
-**재개 명령:** `git log --oneline -8` 로 최근 커밋 확인 → 위 1번부터.
+**재개 명령:** `git log --oneline -8` 로 최근 커밋 확인 → 위 1번(쿼리 에러 핸들링)부터.
 
 ---
 
