@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { toast } from 'sonner';
 
@@ -89,6 +90,7 @@ export function SessionEditorForm({ initialDate, onDone }: SessionEditorFormProp
   const [tagNames, setTagNames] = useState<string[]>([]);
 
   const [pending, startTransition] = useTransition();
+  const queryClient = useQueryClient();
 
   const canSave = disciplines.length > 0 && !pending;
 
@@ -120,7 +122,8 @@ export function SessionEditorForm({ initialDate, onDone }: SessionEditorFormProp
       if (res.ok) {
         toast.success('저장됨');
         onDone();
-        // TODO(infra): calendar 쿼리 invalidate(QueryClient) — 지금은 데이터 휴면이라 불필요.
+        // 캘린더 읽기 갱신: ['calendar'] 프리픽스로 summaries(월 그리드)+day(선택일 상세) 모두 무효화.
+        void queryClient.invalidateQueries({ queryKey: ['calendar'] });
       } else if (res.dormant) {
         toast.info(res.error); // 인프라 전 안내 — 닫지 않음(사용자가 셸 탐색 유지).
       } else {

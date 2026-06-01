@@ -1,11 +1,13 @@
 'use client';
 
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 
 import { CalendarMonthGrid } from '@/features/calendar-view';
 import { DayDetail } from '@/widgets/day-detail';
-import type { CalendarDaySummaryMap, SessionWithDisciplines } from '@/entities/session';
+import { fetchCalendarDaySummaries, fetchDaySessions } from '@/entities/session';
+import { isAuthEnabled } from '@/shared/api/supabase/env';
 import { ChevronLeftIcon, IconButton, PlusIcon, TodayIcon } from '@/shared/ui';
 import { useSessionEditorStore } from '@/shared/model/session-editor-store';
 
@@ -17,11 +19,13 @@ import { useSessionEditorStore } from '@/shared/model/session-editor-store';
  * `selectedDate`/`activeStartDate` 상태를 여기로 끌어올려(lift) 양쪽에 props로 내린다
  * → feature↔widget 직접 import 없이 상태 공유(레이어 규칙 준수).
  *
- * 데이터 휴면(infra 전): daySummaries={{}}(빈 맵), sessions=[](빈 배열).
- * 월간 그리드는 오늘만 강조된 빈 달, Day Detail은 EmptyState를 렌더한다.
+ * 데이터: TanStack Query로 calendar_day_summary(월 가시범위) + 선택일 sessions(+종목)를
+ * 읽는다. 두 쿼리 모두 `enabled: isAuthEnabled()` 로 게이팅 — AUTH ON(현재)이면 실데이터,
+ * AUTH OFF(개발 셸)면 비활성 → 기본값({}/[])이 유지되어 휴면 빈 상태(빈 달 + EmptyState)로
+ * 폴백한다(Supabase 호출 없음, infra-last 보존). 저장(F3)은 ['calendar'] 키를 invalidate해 갱신.
  *
- * 날짜 처리는 전부 클라이언트(dayjs/new Date) → 서버 page는 searchParams를 읽지 않아
- * /calendar 라우트가 정적(static)으로 유지된다(인증 휴면 + 정적 프리렌더, layout 주석 참고).
+ * 날짜 처리는 전부 클라이언트(dayjs/new Date) → 서버 page는 searchParams를 읽지 않는다.
+ * (쿼리는 클라이언트 RLS 호출이라 라우트는 동적 `ƒ`로 — AUTH ON 상태, layout 주석 참고.)
  */
 
 /** dayjs 기본 로케일이 영어라 월 라벨은 직접 조립("2026년 5월"). */
@@ -43,12 +47,25 @@ export function CalendarScreen() {
   // TODO(deep-link): useSearchParams()로 ?date=YYYY-MM-DD 초기값 수용(<Suspense> 경계 필요).
   //   지금은 빌드 정적 유지를 위해 기본 오늘로 두고 딥링크는 보류.
 
-  // TODO(Phase 2/infra): calendar_day_summary 월별 조회로 채움.
-  //   activeStartDate의 달 범위로 뷰를 쿼리 → Record<'YYYY-MM-DD', CalendarDaySummary>.
-  const daySummaries: CalendarDaySummaryMap = {};
+  // 월간 그리드 가시 범위 — 6주 그리드의 이웃 달 셀까지 점이 찍히도록 달 경계 ±7일로 넓힌다.
+  const rangeStart = dayjs(activeStartDate).startOf('month').subtract(7, 'day').format('YYYY-MM-DD');
+  const rangeEnd = dayjs(activeStartDate).endOf('month').add(7, 'day').format('YYYY-MM-DD');
 
-  // TODO(Phase 2/infra): 선택 날짜(selectedDate)의 sessions(+disciplines) 조회로 채움.
-  const sessions: SessionWithDisciplines[] = [];
+  // calendar_day_summary(월 가시범위) → 'YYYY-MM-DD' 키 맵. 키는 표시 달(YYYY-MM)로 캐싱.
+  // enabled: isAuthEnabled() — OFF면 비활성 → 기본 {}(휴면 빈 달) 유지.
+  const { data: daySummaries = {} } = useQuery({
+    queryKey: ['calendar', 'summaries', dayjs(activeStartDate).format('YYYY-MM')],
+    queryFn: () => fetchCalendarDaySummaries(rangeStart, rangeEnd),
+    enabled: isAuthEnabled(),
+  });
+
+  // 선택 날짜의 sessions(+종목). enabled OFF면 기본 [](휴면 → DayDetail EmptyState).
+  const selectedKey = dayjs(selectedDate).format('YYYY-MM-DD');
+  const { data: sessions = [] } = useQuery({
+    queryKey: ['calendar', 'day', selectedKey],
+    queryFn: () => fetchDaySessions(selectedKey),
+    enabled: isAuthEnabled(),
+  });
 
   const goPrevMonth = () => setActiveStartDate((d) => dayjs(d).subtract(1, 'month').startOf('month').toDate());
   const goNextMonth = () => setActiveStartDate((d) => dayjs(d).add(1, 'month').startOf('month').toDate());
@@ -141,7 +158,7 @@ export function CalendarScreen() {
 
       {/* ── 본문: 데스크톱(lg+) 그리드+상세 좌우, 그 아래는 세로 스택 (Design §10.2) ── */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_22rem] xl:grid-cols-[minmax(0,1fr)_24rem]">
-        {/* 월간 그리드(feature) — 데이터 휴면: 빈 맵 */}
+        {/* 월간 그리드(feature) — daySummaries: AUTH ON이면 실데이터, OFF면 빈 맵(휴면) */}
         <CalendarMonthGrid
           daySummaries={daySummaries}
           selectedDate={selectedDate}
@@ -150,7 +167,7 @@ export function CalendarScreen() {
           onActiveStartDateChange={setActiveStartDate}
         />
 
-        {/* Day Detail(widget) — 데이터 휴면: 빈 세션 → EmptyState */}
+        {/* Day Detail(widget) — sessions: AUTH ON이면 실데이터, OFF면 빈 배열 → EmptyState */}
         <DayDetail selectedDate={selectedDate} sessions={sessions} />
       </div>
     </div>
