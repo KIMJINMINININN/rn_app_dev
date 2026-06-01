@@ -65,10 +65,10 @@
 - ↪ 남음: **실 로그인 동작=인프라**(실 Supabase + 플래그 ON) · 표시명/타임존/**종목별 랭크 편집 UI(F1-AC3/AC4, user_ranks upsert)** · 소셜 로그인(T6) · email confirm 분기 확정(T5) · 모바일 토큰 핸드오프(§10)
 - ⚠️ 인프라 메모: `.env.local`에 **냉장고(레퍼런스) 프로젝트의 stale Supabase 값**(+COUPANG/KURLY/BAEMIN 플래그) 잔존 → 인프라 때 MMA 키로 **교체** 필요
 
-### 5b. F1 후속 — 프로필/랭크 편집 UI  *(인증 골격에서 분리, 미뤄둠 2026-06-01)*
-- [ ] `profile`: 표시명·타임존(기본 Asia/Seoul) 편집 (F1-AC3, `profiles` update)
-- [ ] **종목별 랭크 편집** (F1-AC4): bjj=BeltBadge+스트라이프(0~4), 비bjj=레벨(입문/중급/고급) — `entities/rank`·`BeltBadge` 재사용, `user_ranks` upsert(`userRankUpsertSchema`)
-- ↪ 실제 저장은 인프라(실 Supabase). 지금은 UI + 휴면 액션(env-gated)까지. profile 페이지의 랭크 placeholder를 실 편집 UI로 대체.
+### 5b. ✅ F1 후속 — 프로필/랭크 편집 UI  — `02391d9`(2026-06-01)
+- [x] `profile`: 표시명·타임존(기본 Asia/Seoul) 편집 (F1-AC3, `profiles` update) — `entities/profile` + `features/edit-profile`(ProfileRankEditor 섬)
+- [x] **종목별 랭크 편집** (F1-AC4): bjj=BeltBadge+스트라이프(0~4)+라이브 미리보기, 비bjj=레벨(미설정/입문/중급/고급) — `entities/rank`·`BeltBadge`·`userRankUpsertSchema` 재사용, `user_ranks` upsert(onConflict user_id,track)
+- ↪ 저장은 env-gated dormant(`updateProfile`/`upsertRank`, 플래그 OFF→안내 토스트). 실 저장=인프라(플래그 ON). placeholder cast는 db:types 후 제거. architect APPROVED. /profile 정적 유지.
 
 ### 6. P0 기능 — Develop §12 (빌드 순서), 화면 Design §7
 - [~] **F2 캘린더 UI 셸** — `18e021d`: `features/calendar-view`(월간 그리드 react-calendar 커스텀, 종목 점+세션수, 오늘/선택 강조) + `widgets/day-detail`(세션카드/EmptyState) + `(app)/calendar` 조립(월네비·뷰탭·오늘로). 데이터 휴면(빈 맵/배열). ↪ 남음: `calendar_day_summary` 월별 조회 연결(Phase2/infra) · 셀 `+`/뷰탭 주·아젠다(P1) · `?date` 딥링크
@@ -87,8 +87,9 @@
 - [x] **F9 배지 일관 + 색약 3중인코딩** — `22c1b3a`(2026-06-01): 전 화면 칩/배지·상태 §10.1 감사. TechniqueCard 벨트 라벨 복구 · MediaPicker 에러 `--danger` 교정+⚠ · login/signup ⚠/ⓘ. 상태 글리프 통일(⚠ danger/ⓘ info). architect 독립 전수 감사 APPROVED — 색-단독 인코딩 잔존 0.
   - ↪ **🎉 P0 기능 F2~F9 전부 UI 셸 완료.** 다음은 미뤄둔 5b(프로필/랭크) · 기술 생성폼 · 모바일 WebView(7) · 그리고 🟥 인프라 점등.
 
-### 7. 모바일 (P0 = WebView)
-- [ ] `apps/mobile` WebView가 MMA 웹 로드 + auth 브릿지 점검 *(네이티브 촬영 브릿지는 P1)*
+### 7. ✅ 모바일 (P0 = WebView) — `4a0bf23`(2026-06-01)
+- [x] `apps/mobile` WebView가 MMA 웹 로드(`EXPO_PUBLIC_CLIENT_URL` 오버라이드로 로컬 dev, 실 URL=인프라) + 데모탭 정리(web 단일 'MMA' 탭, §9.1) + auth 브릿지 점검(webview-protocol AuthMessage↔use-webview-message 일치 확인·핸드오프 문서화) *(네이티브 촬영 브릿지는 P1)*
+  - ↪ 남음(인프라): 실 Vercel CLIENT_URL · 웹측 AUTH_* 발신(로그인/로그아웃 시 postMessage) · 네이티브 secure-store 토큰 보관 · MEDIA_* 브릿지(F5/P1)
 
 ---
 
