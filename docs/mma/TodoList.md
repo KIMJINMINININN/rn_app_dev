@@ -19,6 +19,7 @@
 - [x] **6-F4. 기술 라이브러리** — `entities/technique` 보강(`PositionChip`+position-meta 12종) + `features/technique-library`(순수 `filterAndSortTechniques` 종목·분류·포지션·벨트+정렬 / `TechniqueFilterBar` 토큰 select 5 / `TechniqueCard`[다중엔티티 조합→feature 배치] / `TechniqueLibrary` client 아일랜드+EmptyState 2종) + `(app)/techniques` 목록(dormant []→정적) & 상세 셸(Position/CategoryChip + '미리보기' 마커). 데이터 휴면. architect APPROVED, typecheck·lint·build·gitleaks ✅ — `f1fdac7` *(2026-06-01)*
 - [x] **6-F5. 미디어** — `entities/media/ui`(YoutubeEmbed·MediaThumb·VideoPlayer) + `features/media-upload`(MediaDraft+한도검증 / MediaPicker: 유튜브 링크 실동작·파일 검증+object-URL 프리뷰) + `/api/media/sign-upload`(env-gated dormant Route, `<uid>/videos/<uuid>`) + F3 미디어 섹션 연결. **유튜브=백엔드0 완전동작**, 업로드=dormant. architect APPROVED(object-URL 누수 수정 후), typecheck·lint·build·gitleaks ✅ — `894d95d` *(2026-06-01)*
 - [x] **6-F6. 메모/주의점** — `shared/ui/markdown/MarkdownView`(marked→DOMPurify strict allowlist→inject, XSS 안전, SSR-safe useSyncExternalStore, 토큰 prose) + `shared/ui/callout/Callout`(주의점 강조 §9.3) + SessionCard memo_md & 기술상세 설명/주의점 연결. `marked` 추가. **architect XSS 적대 검증 APPROVED**, typecheck·lint·build·gitleaks ✅ — `fb1eeaa` *(2026-06-01)*
+- [x] **6-F7. 태그+태그검색** — `features/tag-filter`(순수 tags helpers + **TagInput** 콤보박스: 자동완성·신규생성·AND 필터 양모드, TagChip 재사용, combobox a11y[role/aria-*·↑↓/Enter/Esc/쉼표/Backspace]) + `(app)/tags` 태그 보기(§7f, 선택 AND + 그룹 EmptyState, 정적) + F3 세션에디터 태그 stub 연결. persist dormant(tag_ids:[] seam). architect APPROVED(a11y 폴리시 반영), typecheck·lint·build·gitleaks ✅ — `d6fee4a` *(2026-06-01)*
 - [x] **5. 인증 골격** (F1) login/signup/logout Server Action + client form + `shared/ui/Input` + `src/proxy.ts`(Next 16 세션 미들웨어) + env-gated 가드/프로필 — `d44df32` (실동작은 인프라, 랭크/프로필 편집은 후속) *(2026-06-01)*
 - [x] **4. 앱 셸 + 내비 + 글로벌 검색바** `widgets/app-shell`(SideNav[데스크톱]→BottomNav[모바일] 반응형·TopBar+SearchBar·ThemeToggle·빨강 FAB) + `shared/ui`(Button/IconButton/EmptyState/Skeleton/theme[FOUC]) + `app/{(app),(auth)}` 라우트 스캐폴드(걸어다니는 셸) + 루트 layout `data-theme`/FOUC 주입 + Providers(QueryClient) — typecheck·build ✅, FSD 깨끗, 의존성 0 추가 *(커밋 대기, DB/auth는 스텁)*
 
@@ -77,7 +78,9 @@
   - ↪ 남음(인프라/후속): 실 업로드 플로우(sign-upload→Storage PUT→`media_assets` row→`media_id`) · **MediaDraft → logSession.media 매핑**(youtube=row 생성, upload=업로드 후 row) · 재생용 `createSignedUrl`(VideoPlayer src) · 업로드 썸네일 생성(§5.5) · F4 상세/SessionCard 미디어 행에 실제 컴포넌트 연결 · 네이티브 촬영 브릿지(P1) · external 링크(P1) · 유튜브 검색(`/api/youtube/search`, API키)
 - [x] **F6 메모·주의점**(강조 박스) — `fb1eeaa`(2026-06-01): `shared/ui/markdown/MarkdownView`(marked→DOMPurify strict allowlist→inject, XSS 안전 · SSR-safe useSyncExternalStore · 토큰 prose) + `shared/ui/callout/Callout`(주의점 §9.3) + SessionCard memo_md & 기술상세 설명/주의점 연결. `marked` 추가. architect XSS APPROVED.
   - ↪ 남음(후속): 메모 **편집** 시 지원 마크다운 안내(소제목 h3~) · h1/h2·표는 현재 텍스트로만 표시(의도) · F4 상세 실 description_md/details_md 연결(인프라)
-- [ ] F7 태그+태그검색 · F8 글로벌 검색(`search_all`) · F9 배지 일관 적용
+- [x] **F7 태그+태그검색** — `d6fee4a`(2026-06-01): `features/tag-filter`(순수 tags helpers + **TagInput** 콤보박스[자동완성·신규생성·AND 필터 양모드, TagChip 재사용, combobox a11y]) + `(app)/tags` 태그 보기(§7f, 선택 AND + 그룹 EmptyState, 정적) + F3 세션에디터 태그 stub 연결. 태그 persist는 dormant(tag_ids:[] seam). architect APPROVED.
+  - ↪ 남음(인프라/후속): 사용자 태그 조회(autocomplete suggestions) · 선택 태그 **AND 조회**(taggables→기술/세션 그룹 결과) · 세션/기술 저장 시 **이름→tags upsert→tag_id 매핑** · 태그칩 클릭→`/tags` 진입 · 필터 모드 no-match 안내 · 태그 색상/사용빈도순(P1)
+- [ ] F8 글로벌 검색(`search_all`) · F9 배지 일관 적용
 
 ### 7. 모바일 (P0 = WebView)
 - [ ] `apps/mobile` WebView가 MMA 웹 로드 + auth 브릿지 점검 *(네이티브 촬영 브릿지는 P1)*
