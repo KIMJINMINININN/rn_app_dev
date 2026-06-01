@@ -61,7 +61,6 @@ export function TechniqueCard({ technique, thumbnailUrl = null }: TechniqueCardP
             belt={technique.belt}
             stripes={technique.belt_stripes ?? 0}
             size="xs"
-            showLabel={false}
           />
         )}
       </div>

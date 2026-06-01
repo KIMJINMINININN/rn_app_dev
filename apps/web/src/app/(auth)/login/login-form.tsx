@@ -40,6 +40,7 @@ export function LoginForm() {
 
       {state?.error ? (
         <p role="alert" className="text-body-s-400 text-[var(--danger)]">
+          <span aria-hidden="true">⚠ </span>
           {state.error}
         </p>
       ) : null}

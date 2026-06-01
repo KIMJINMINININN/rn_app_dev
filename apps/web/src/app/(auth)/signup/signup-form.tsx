@@ -40,11 +40,13 @@ export function SignupForm() {
 
       {state?.message ? (
         <p role="status" className="text-body-s-400 text-[var(--text-default)]">
+          <span aria-hidden="true">ⓘ </span>
           {state.message}
         </p>
       ) : null}
       {state?.error ? (
         <p role="alert" className="text-body-s-400 text-[var(--danger)]">
+          <span aria-hidden="true">⚠ </span>
           {state.error}
         </p>
       ) : null}

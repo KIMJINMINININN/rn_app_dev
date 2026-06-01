@@ -242,7 +242,8 @@ export function MediaPicker({ value, onChange, max = DEFAULT_MAX }: MediaPickerP
             </Button>
           </div>
           {linkError && (
-            <p role="alert" className="text-body-xs-400 text-[var(--primary)]">
+            <p role="alert" className="text-body-xs-400 text-[var(--danger)]">
+              <span aria-hidden="true">⚠ </span>
               {linkError}
             </p>
           )}
