@@ -105,9 +105,9 @@
 - [x] 새 Supabase 프로젝트 생성(**the-others-mma**, Seoul, ref `cbjahigkhlvttnpmfdls`) + `supabase login`/`link` + `pnpm web db:push` (0001~0015 원격 적용) — 사장님
 - [x] 로컬 `supabase db reset`로 **마이그레이션 실제 검증** (start+reset 2회 클린, 11테이블·4함수·뷰·RLS12·버킷)
 - [x] `pnpm web db:types` → 실 `Database` 타입(727줄) + **placeholder 캐스트 전부 제거** — `635b0af`
-- [x] `.env.local` 키 작성(새 MMA sb_ 키, gitignore·미커밋) — 사장님 · `AUTH_ENABLED`는 아직 false(점등 전)
-- [ ] **읽기 경로 데이터 와이어링** — dormant UI(캘린더 daySummaries/세션·기술 목록·상세·태그 suggestions/AND·프로필 로드)를 실 페치로 + 쿼리 invalidate. + 미디어 실업로드 플로우 + log_session 다룬기술/태그/미디어 매핑. **(다음 큰 코드 작업)**
-- [ ] `NEXT_PUBLIC_AUTH_ENABLED=true` 점등(읽기 와이어링과 함께)
+- [x] `.env.local` 키 작성(새 MMA sb_ 키, gitignore·미커밋) — 사장님 *(⚠️ 키 이름이 `E2E_SUPABASE_*`로 잘못 들어가 500 → `NEXT_PUBLIC_SUPABASE_*`/`SUPABASE_SECRET_KEY`로 교정)*
+- [x] **`NEXT_PUBLIC_AUTH_ENABLED=true` 점등 + 로컬 스모크테스트** — dev :3002에서 /login 200·/calendar 307 가드·sign-upload 401·**사장님 회원가입/로그인 실제 성공**(쓰기 경로 라이브)
+- [ ] **읽기 경로 데이터 와이어링** — dormant UI(캘린더 daySummaries/세션·기술 목록·상세·태그 suggestions/AND·프로필 로드)를 실 페치로 + 쿼리 invalidate. + 미디어 실업로드 플로우 + log_session 다룬기술/태그/미디어 매핑. **(다음 큰 코드 작업 — 화면에 실데이터)**
 - [ ] 원격 `training-media` 버킷 생성(대시보드) — 미디어 업로드 전
 - [ ] Vercel 프로젝트 + env → 배포 (+ Supabase Auth site_url/redirect에 Vercel 도메인)
 - [ ] (선택) 독립 레포 추출 여부 결정
