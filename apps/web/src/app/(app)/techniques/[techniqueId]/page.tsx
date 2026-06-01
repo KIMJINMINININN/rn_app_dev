@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { EmptyState, ChevronLeftIcon } from '@/shared/ui';
+import { EmptyState, ChevronLeftIcon, Callout, MarkdownView } from '@/shared/ui';
 import { DisciplineChip } from '@/entities/discipline';
 import { BeltBadge } from '@/entities/rank';
 import { CategoryChip, PositionChip } from '@/entities/technique';
@@ -8,11 +8,24 @@ import { CategoryChip, PositionChip } from '@/entities/technique';
  * 기술 상세 셸 (F4/F5/F6 / Design §7d, §9.3) — 워크어블 셸.
  *
  * 뒤로 링크 + 제목 placeholder + DisciplineChip/BeltBadge 슬롯 + 미디어 행 placeholder
- * + 주의점 빨강 박스(§9.3 — 좌측 빨강 바 + --primary-soft 배경) + 역참조 세션 EmptyState.
+ * + 설명 section + 주의점 Callout 박스(§9.3 — 좌측 빨강 바 + --primary-soft 배경) + 역참조 세션 EmptyState.
+ *
+ * 설명/주의점 본문은 MarkdownView(F6 — marked→DOMPurify XSS-안전 파이프라인)로 렌더한다.
+ * 인프라 이전이라 실데이터가 없어 본문은 "무엇을 적는 곳인지" 안내하는 **지시형 placeholder 마크다운**
+ * (DEMO_DESCRIPTION_MD / DEMO_DETAILS_MD) — 가짜 기술의 실제 노트가 아니다. 배지/미디어 행과 동일한
+ * 레이아웃 미리보기 성격. 인프라 때 techniqueId로 페치한 실 description_md / details_md로 교체한다.
  *
  * Next 16: params는 Promise → async 페이지에서 await (PRD 라우트 트리 [techniqueId]).
- * TODO(F4/F5/F6): techniqueId로 RSC 페치 → 실제 제목/배지/미디어/설명/주의점/역참조 세션 렌더.
+ * TODO(infra): techniqueId로 RSC 페치 → 실제 제목/배지/미디어/설명/주의점/역참조 세션 렌더.
  */
+
+/** 설명 section 미리보기용 지시형 placeholder 마크다운 (실 description_md 아님 — 인프라 때 교체). */
+const DEMO_DESCRIPTION_MD =
+  '이 기술의 개념과 셋업을 **마크다운**으로 정리합니다.\n\n- 그립/포지션\n- 핵심 디테일';
+
+/** 주의점 Callout 미리보기용 지시형 placeholder 마크다운 (실 details_md 아님 — 인프라 때 교체). */
+const DEMO_DETAILS_MD =
+  '- 핵심 디테일과 자주 하는 실수를 적어두세요.\n- 견갑 고정처럼 놓치기 쉬운 포인트.';
 export default async function TechniqueDetailPage({
   params,
 }: {
@@ -63,17 +76,14 @@ export default async function TechniqueDetailPage({
         ))}
       </div>
 
-      {/* 주의점 빨강 강조 박스 (Design §9.3 / §7d — 좌측 빨강 바 + primary-soft 배경) */}
-      <div className="mt-5 overflow-hidden rounded-m border-l-4 border-[var(--primary)] bg-[var(--primary-soft)] p-4">
-        <p className="flex items-center gap-1.5 text-button-m font-medium text-[var(--danger)]">
-          <span aria-hidden="true">⚠</span>
-          주의점 / 디테일
-        </p>
-        {/* TODO(F6): 마크다운 주의점 본문 렌더(dompurify sanitize). 지금은 placeholder. */}
-        <p className="mt-2 text-body-s-400 text-[var(--text-default)]">
-          이 기술의 핵심 디테일과 자주 하는 실수를 여기에 정리합니다.
-        </p>
-      </div>
+      {/* 설명 (Design §7d — 주의점 앞). 본문은 MarkdownView(F6). 지금은 지시형 placeholder. */}
+      <h2 className="mb-2 mt-5 text-heading-xs text-[var(--text-strong)]">설명</h2>
+      <MarkdownView source={DEMO_DESCRIPTION_MD} />
+
+      {/* 주의점 빨강 강조 박스 (Design §9.3 / §7d — Callout danger + MarkdownView 본문). */}
+      <Callout variant="danger" title="주의점 / 디테일" className="mt-5">
+        <MarkdownView source={DEMO_DETAILS_MD} />
+      </Callout>
 
       <hr className="my-5 border-[var(--border-subtle)]" />
 

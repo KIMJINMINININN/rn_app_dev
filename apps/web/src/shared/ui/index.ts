@@ -7,5 +7,7 @@ export * from './icon-button/IconButton';
 export * from './input/Input';
 export * from './empty-state/EmptyState';
 export * from './skeleton/Skeleton';
+export * from './markdown/MarkdownView';
+export * from './callout/Callout';
 export * from './icons/icons';
 export * from './theme';

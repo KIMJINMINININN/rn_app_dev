@@ -1,3 +1,4 @@
+import { MarkdownView } from '@/shared/ui';
 import { DisciplineChip } from '@/entities/discipline';
 import {
   CLASS_TYPE_LABELS,
@@ -10,8 +11,9 @@ import {
  *
  * 헤더: DisciplineChip(들) + 수업유형 라벨 + 시간(분) + 강도 5단계 점(●●●○○).
  * 메타: 체육관 · 파트너 한 줄.
- * 본문: 다룬 기술 / 미디어 / 메모 / 태그 섹션 — 이들은 더 깊은 데이터(세션-기술 로그,
- *   media, tags)에 의존하므로 지금은 섹션 라벨 + 플레이스홀더만. 가짜 데이터 금지.
+ * 본문: 다룬 기술 / 미디어 / 메모 / 태그 섹션. 다룬 기술·미디어·태그는 더 깊은 데이터(세션-기술
+ *   로그, media, tags)에 의존하므로 지금은 섹션 라벨 + 플레이스홀더만(가짜 데이터 금지).
+ *   메모(memo_md)는 세션 본체의 실데이터 — 값이 있으면 MarkdownView로 XSS-안전 렌더(F6).
  *
  * 표시 전용(상호작용 없음) → 서버 컴포넌트. 토큰 + `--shadow-card`로 클린 카드.
  */
@@ -105,14 +107,11 @@ export function SessionCard({ session }: SessionCardProps) {
           <p className="text-body-xs-400 text-[var(--text-disabled)]">영상/링크 연동 예정</p>
         </section>
 
-        {/* 메모(memo_md)는 세션 본체에 있으므로 값이 있으면 표시, 없으면 플레이스홀더. */}
+        {/* 메모(memo_md)는 세션 본체의 실데이터 — 값이 있으면 마크다운 렌더(F6), 없으면 플레이스홀더. */}
         <section className="space-y-1">
           <SectionLabel>메모</SectionLabel>
           {session.memo_md ? (
-            // TODO(F6): memo_md 마크다운 렌더. 지금은 평문(줄바꿈 보존).
-            <p className="whitespace-pre-line text-body-s-400 text-[var(--text-default)]">
-              {session.memo_md}
-            </p>
+            <MarkdownView source={session.memo_md} />
           ) : (
             <p className="text-body-xs-400 text-[var(--text-disabled)]">메모 없음</p>
           )}
