@@ -16,6 +16,7 @@ import {
   techniqueInsertSchema,
   type TechniqueInsert,
 } from '@/entities/technique';
+import { fetchTagNames } from '@/entities/tag';
 import { isAuthEnabled } from '@/shared/api/supabase/env';
 import { DisciplineChip, DISCIPLINE_META, STRIKING_STYLE_LABEL, usesBelt } from '@/entities/discipline';
 import { BeltBadge, BELT_META } from '@/entities/rank';
@@ -111,6 +112,12 @@ export function TechniqueForm({ mode, techniqueId }: TechniqueFormProps) {
   const [mediaDrafts, setMediaDrafts] = useState<MediaDraft[]>([]);
   // 태그 이름(F7) — TagInput으로 수집되지만 영속화(이름→tags 행→taggables)는 인프라 후(아래 handleSave seam).
   const [tagNames, setTagNames] = useState<string[]>([]);
+  // 자동완성 후보(읽기 #5) — 사용자 기존 태그. AUTH OFF면 비활성 → [].
+  const { data: tagSuggestions = [] } = useQuery({
+    queryKey: ['tags', 'names'],
+    queryFn: fetchTagNames,
+    enabled: isAuthEnabled(),
+  });
 
   const [pending, startTransition] = useTransition();
 
@@ -411,7 +418,7 @@ export function TechniqueForm({ mode, techniqueId }: TechniqueFormProps) {
           value={tagNames}
           onChange={setTagNames}
           allowCreate
-          suggestions={[]}
+          suggestions={tagSuggestions}
           label="태그"
           placeholder="태그 추가 (예: 백테이크)"
         />

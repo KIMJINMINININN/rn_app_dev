@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { toast } from 'sonner';
 
@@ -9,7 +9,9 @@ import { logSession, logSessionInputSchema } from '@/features/log-session';
 import { MediaPicker, type MediaDraft } from '@/features/media-upload';
 import { TagInput } from '@/features/tag-filter';
 import { CLASS_TYPE_LABELS } from '@/entities/session';
+import { fetchTagNames } from '@/entities/tag';
 import { CLASS_TYPES, type ClassType, type Discipline } from '@/shared/model/enums';
+import { isAuthEnabled } from '@/shared/api/supabase/env';
 import { Button } from '@/shared/ui';
 
 import { DisciplinePicker } from './DisciplinePicker';
@@ -91,6 +93,13 @@ export function SessionEditorForm({ initialDate, onDone }: SessionEditorFormProp
 
   const [pending, startTransition] = useTransition();
   const queryClient = useQueryClient();
+
+  // 자동완성 후보(읽기 #5) — 사용자 기존 태그. AUTH OFF면 비활성 → [].
+  const { data: tagSuggestions = [] } = useQuery({
+    queryKey: ['tags', 'names'],
+    queryFn: fetchTagNames,
+    enabled: isAuthEnabled(),
+  });
 
   const canSave = disciplines.length > 0 && !pending;
 
@@ -294,7 +303,7 @@ export function SessionEditorForm({ initialDate, onDone }: SessionEditorFormProp
           value={tagNames}
           onChange={setTagNames}
           allowCreate
-          suggestions={[]}
+          suggestions={tagSuggestions}
           label="태그"
           placeholder="태그 추가 (예: 백테이크)"
         />
