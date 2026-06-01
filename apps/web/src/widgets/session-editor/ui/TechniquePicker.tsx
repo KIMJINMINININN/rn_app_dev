@@ -92,6 +92,15 @@ export function TechniquePicker({
     onChange(value.filter((v) => v.technique_id !== id));
   }
 
+  /** 그날 메모(day_memo_md) 갱신 — 빈 문자열은 null로(미설정). 입력 중 글자는 그대로 보존. */
+  function setMemo(id: string, memo: string) {
+    onChange(
+      value.map((v) =>
+        v.technique_id === id ? { ...v, day_memo_md: memo === '' ? null : memo } : v,
+      ),
+    );
+  }
+
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'ArrowDown') {
       if (matches.length === 0) return;
@@ -137,31 +146,43 @@ export function TechniquePicker({
             return (
               <li
                 key={draft.technique_id}
-                className="flex items-center gap-2 rounded-xs border border-[var(--border-subtle)] bg-[var(--surface-base)] px-2.5 py-1.5"
+                className="flex flex-col gap-1.5 rounded-xs border border-[var(--border-subtle)] bg-[var(--surface-base)] px-2.5 py-2"
               >
-                {t ? (
-                  <>
-                    <DisciplineChip discipline={t.discipline} size="xs" />
-                    <span className="min-w-0 flex-1 truncate text-body-s-500 text-[var(--text-strong)]">
-                      {t.name}
+                <div className="flex items-center gap-2">
+                  {t ? (
+                    <>
+                      <DisciplineChip discipline={t.discipline} size="xs" />
+                      <span className="min-w-0 flex-1 truncate text-body-s-500 text-[var(--text-strong)]">
+                        {t.name}
+                      </span>
+                    </>
+                  ) : (
+                    // 후보 로드 전/삭제된 기술 — id만 있는 경우의 방어적 표시.
+                    <span className="min-w-0 flex-1 truncate text-body-s-400 text-[var(--text-muted)]">
+                      기술 불러오는 중…
                     </span>
-                  </>
-                ) : (
-                  // 후보 로드 전/삭제된 기술 — id만 있는 경우의 방어적 표시.
-                  <span className="min-w-0 flex-1 truncate text-body-s-400 text-[var(--text-muted)]">
-                    기술 불러오는 중…
-                  </span>
-                )}
-                <button
-                  type="button"
-                  onClick={() => remove(draft.technique_id)}
-                  aria-label={`다룬 기술 ${t?.name ?? ''} 제거`}
-                  className="shrink-0 rounded-full p-1 text-[var(--text-muted)] outline-none transition-colors hover:text-[var(--danger)] focus-visible:shadow-[var(--ring-focus)]"
-                >
-                  <svg width={10} height={10} viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" aria-hidden="true">
-                    <path d="M1.5 1.5l7 7M8.5 1.5l-7 7" />
-                  </svg>
-                </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => remove(draft.technique_id)}
+                    aria-label={`다룬 기술 ${t?.name ?? ''} 제거`}
+                    className="shrink-0 rounded-full p-1 text-[var(--text-muted)] outline-none transition-colors hover:text-[var(--danger)] focus-visible:shadow-[var(--ring-focus)]"
+                  >
+                    <svg width={10} height={10} viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" aria-hidden="true">
+                      <path d="M1.5 1.5l7 7M8.5 1.5l-7 7" />
+                    </svg>
+                  </button>
+                </div>
+                {/* 그날 메모(day_memo_md) — 선택. 이 세션에서 이 기술에 대한 짧은 메모(SessionCard에 표시). */}
+                <input
+                  type="text"
+                  value={draft.day_memo_md ?? ''}
+                  onChange={(e) => setMemo(draft.technique_id, e.target.value)}
+                  placeholder="그날 메모 (선택) — 예: 그립 디테일"
+                  maxLength={200}
+                  aria-label={`${t?.name ?? '기술'} 그날 메모`}
+                  className="h-7 w-full rounded-xxs border border-[var(--border-strong)] bg-[var(--surface-base)] px-2 text-button-s text-[var(--text-default)] outline-none placeholder:text-[var(--text-disabled)] focus-visible:shadow-[var(--ring-focus)]"
+                />
               </li>
             );
           })}
