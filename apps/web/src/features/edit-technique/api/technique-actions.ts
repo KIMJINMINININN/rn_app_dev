@@ -46,18 +46,13 @@ export async function createTechnique(rawInput: TechniqueInsert): Promise<Techni
   const user = auth.user;
   if (!user) return { ok: false, error: '로그인이 필요합니다.' };
 
-  // types.ts는 인프라 전 placeholder(Tables: never)라 .from('techniques') 제네릭이 테이블을
-  // 모른다 → db:types 생성(인프라) 후 이 캐스트 제거. (Develop §4.7 / §13, profile-actions·log-session 캐스트와 동일 사유)
+  // db:types 생성(인프라) 후 실타입 — .from('techniques') 제네릭이 Insert 컬럼을 안다.
   const row = { user_id: user.id, ...input };
-  const from = supabase.from as unknown as (table: 'techniques') => {
-    insert(values: typeof row): {
-      select(columns: 'id'): {
-        single(): Promise<{ data: { id: string } | null; error: { message: string } | null }>;
-      };
-    };
-  };
-
-  const { data, error } = await from('techniques').insert(row).select('id').single();
+  const { data, error } = await supabase
+    .from('techniques')
+    .insert(row)
+    .select('id')
+    .single();
   if (error || !data) {
     return { ok: false, error: error?.message ?? '기술 저장에 실패했습니다.' };
   }
@@ -89,16 +84,12 @@ export async function updateTechnique(
   const user = auth.user;
   if (!user) return { ok: false, error: '로그인이 필요합니다.' };
 
-  // placeholder Database(Tables: never) 회피용 로컬 캐스트(위 createTechnique 동일 사유) — db:types 후 제거.
-  const from = supabase.from as unknown as (table: 'techniques') => {
-    update(values: typeof input): {
-      eq(column: 'id', value: string): {
-        eq(column: 'user_id', value: string): Promise<{ error: { message: string } | null }>;
-      };
-    };
-  };
-
-  const { error } = await from('techniques').update(input).eq('id', id).eq('user_id', user.id);
+  // db:types 생성(인프라) 후 실타입 — .from('techniques') 제네릭이 Update 컬럼을 안다.
+  const { error } = await supabase
+    .from('techniques')
+    .update(input)
+    .eq('id', id)
+    .eq('user_id', user.id);
   if (error) {
     return { ok: false, error: error.message };
   }

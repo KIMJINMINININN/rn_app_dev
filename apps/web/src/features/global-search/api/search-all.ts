@@ -21,14 +21,17 @@ export async function searchAll(query: string, limit = 30): Promise<SearchResult
 
   const supabase = await createSupabaseServerClient();
 
-  // types.ts는 인프라 전 placeholder(Functions: never)라 rpc 제네릭이 'search_all'을
-  // 모른다 → db:types 생성(인프라) 후 이 캐스트 제거. (Develop §4.7 / §0012)
-  const rpc = supabase.rpc as unknown as (
-    fn: 'search_all',
-    rpcArgs: { p_query: string; p_limit: number },
-  ) => Promise<{ data: SearchResult[] | null; error: { message: string } | null }>;
-
-  const { data, error } = await rpc('search_all', { p_query: q, p_limit: limit });
+  // db:types 생성(인프라) 후 실타입 — rpc 제네릭이 'search_all'(Returns 행 배열)을 안다.
+  const { data, error } = await supabase.rpc('search_all', { p_query: q, p_limit: limit });
   if (error || !data) return [];
-  return data;
+
+  // 생성된 Returns 는 result_type:string·subtitle:string 으로 넓다.
+  // RPC 계약상 result_type 은 'technique'|'session'|'tag' 만 나오므로 SearchResult 로 좁힌다(Develop §0012).
+  return data.map((row) => ({
+    result_type: row.result_type as SearchResult['result_type'],
+    result_id: row.result_id,
+    title: row.title,
+    subtitle: row.subtitle,
+    rank: row.rank,
+  }));
 }

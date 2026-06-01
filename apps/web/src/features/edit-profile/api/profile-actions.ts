@@ -44,15 +44,9 @@ export async function updateProfile(rawInput: ProfileUpdate): Promise<EditResult
   const user = auth.user;
   if (!user) return { ok: false, error: '로그인이 필요합니다.' };
 
-  // types.ts는 인프라 전 placeholder(Tables: never)라 .from('profiles') 제네릭이 테이블을
-  // 모른다 → db:types 생성(인프라) 후 이 캐스트 제거. (Develop §4.7 / §13, log-session rpc 캐스트와 동일 사유)
-  const from = supabase.from as unknown as (table: 'profiles') => {
-    update(values: { display_name: string; timezone: string }): {
-      eq(column: 'user_id', value: string): Promise<{ error: { message: string } | null }>;
-    };
-  };
-
-  const { error } = await from('profiles')
+  // db:types 생성(인프라) 후 실타입 — .from('profiles') 제네릭이 Update 컬럼을 안다.
+  const { error } = await supabase
+    .from('profiles')
     .update({ display_name: input.display_name, timezone: input.timezone })
     .eq('user_id', user.id);
   if (error) {
@@ -83,16 +77,11 @@ export async function upsertRank(rawInput: UserRankUpsert): Promise<EditResult> 
   const user = auth.user;
   if (!user) return { ok: false, error: '로그인이 필요합니다.' };
 
-  // placeholder Database(Tables: never) 회피용 로컬 캐스트(위 updateProfile 동일 사유) — db:types 후 제거.
+  // db:types 생성(인프라) 후 실타입 — .from('user_ranks') 제네릭이 Insert 컬럼을 안다.
   const row = { user_id: user.id, ...input };
-  const from = supabase.from as unknown as (table: 'user_ranks') => {
-    upsert(
-      values: typeof row,
-      options: { onConflict: string },
-    ): Promise<{ error: { message: string } | null }>;
-  };
-
-  const { error } = await from('user_ranks').upsert(row, { onConflict: 'user_id,track' });
+  const { error } = await supabase
+    .from('user_ranks')
+    .upsert(row, { onConflict: 'user_id,track' });
   if (error) {
     return { ok: false, error: error.message };
   }
