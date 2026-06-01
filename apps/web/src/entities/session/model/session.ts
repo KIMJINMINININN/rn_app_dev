@@ -48,11 +48,22 @@ export const sessionDisciplineSchema = z.object({
 });
 export type SessionDiscipline = z.infer<typeof sessionDisciplineSchema>;
 
-/** 조회 편의용 합성 타입 — 세션 + 연결된 종목 목록 + 붙은 태그 이름(표시용, #6-1b) */
+/** 세션에 연결된 기술 1건(표시용) — session_techniques→techniques 평탄화(#6-2). */
+export type SessionTechniqueRef = {
+  id: string;
+  name: string;
+  discipline: Discipline;
+  /** 그날 메모(per-technique). 현재 입력 UI 없음 → 보통 null. */
+  day_memo_md: string | null;
+};
+
+/** 조회 편의용 합성 타입 — 세션 + 연결된 종목 목록 + 붙은 태그 + 다룬 기술(표시용) */
 export type SessionWithDisciplines = Session & {
   disciplines: Discipline[];
-  /** taggables→tags 평탄화한 태그 이름들(없으면 빈 배열). */
+  /** taggables→tags 평탄화한 태그 이름들(없으면 빈 배열, #6-1b). */
   tags: string[];
+  /** session_techniques→techniques 평탄화한 다룬 기술들(없으면 빈 배열, #6-2). */
+  techniques: SessionTechniqueRef[];
 };
 
 /**

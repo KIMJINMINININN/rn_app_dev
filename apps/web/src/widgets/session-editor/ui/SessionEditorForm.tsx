@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import Link from 'next/link';
 import { toast } from 'sonner';
 
 import { logSession, logSessionInputSchema } from '@/features/log-session';
@@ -16,6 +15,7 @@ import { Button } from '@/shared/ui';
 
 import { DisciplinePicker } from './DisciplinePicker';
 import { IntensityPicker } from './IntensityPicker';
+import { TechniquePicker, type SessionTechniqueDraft } from './TechniquePicker';
 import type { SessionEditorMode } from '@/shared/model/session-editor-store';
 
 /**
@@ -86,6 +86,8 @@ export function SessionEditorForm({ initialDate, onDone }: SessionEditorFormProp
   const [partners, setPartners] = useState('');
   const [memo, setMemo] = useState('');
   const [detailsOpen, setDetailsOpen] = useState(false);
+  // 다룬 기술(F4/#6-2) — 내 라이브러리에서 선택한 { technique_id, day_memo_md } 드래프트.
+  const [techniqueDrafts, setTechniqueDrafts] = useState<SessionTechniqueDraft[]>([]);
   // 미디어 초안(F5) — 영속화 전이라 RPC로 흘리지 않고 로컬 수집만(아래 handleSave seam 참고).
   const [mediaDrafts, setMediaDrafts] = useState<MediaDraft[]>([]);
   // 태그 이름(F7) — TagInput으로 실제 수집되지만 영속화(이름→tags 행→tag_id)는 인프라 후(아래 handleSave seam).
@@ -117,7 +119,8 @@ export function SessionEditorForm({ initialDate, onDone }: SessionEditorFormProp
       rating: null,
       // 태그 이름 — 서버 액션이 tags 행 생성/조회 후 taggables로 연결(#6-1).
       tag_names: tagNames,
-      techniques: [],
+      // 다룬 기술 — RPC가 session_techniques로 연결(#6-2).
+      techniques: techniqueDrafts,
       // TODO(infra): mediaDrafts → media_assets 생성(youtube=row, upload=sign-upload→PUT→row) → media_id[] 를 여기 media 에 매핑.
       media: [],
     };
@@ -271,22 +274,10 @@ export function SessionEditorForm({ initialDate, onDone }: SessionEditorFormProp
         )}
       </section>
 
-      {/* ── 다룬 기술 (STUB — F4) ──
-          세션-기술 연결(검색·첨부)은 기술 데이터 + 연결 플로우가 필요해 도먼시다(handleSave의 techniques:[] 유지).
-          전체 기술 검색을 여기 끼워 넣지 않는다(인프라). 대신 유일한 실제 액션 — "새 기술 만들기" 링크(F4-AC1)만 둔다. */}
+      {/* ── 다룬 기술 (F4/#6-2) — 내 라이브러리에서 검색·선택 → session_techniques 연결 ── */}
       <section className="flex flex-col gap-2 border-t border-[var(--border-subtle)] pt-4">
         <SectionLabel>다룬 기술</SectionLabel>
-        <p className="text-body-xs-400 text-[var(--text-muted)]">
-          세션에 기술 연결은 인프라 연결 후 추가됩니다. 먼저 기술을 만들어 둘 수 있어요.
-        </p>
-        <div>
-          <Link
-            href="/techniques/new"
-            className="inline-flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-xxs px-2.5 text-button-s font-medium select-none border border-[var(--border-strong)] bg-[var(--surface-base)] text-[var(--text-default)] outline-none transition-colors duration-[var(--duration-fast)] ease-[var(--ease-standard)] pointer-hover:bg-[var(--surface-sunken)] focus-visible:shadow-[var(--ring-focus)]"
-          >
-            + 새 기술 만들기
-          </Link>
-        </div>
+        <TechniquePicker value={techniqueDrafts} onChange={setTechniqueDrafts} />
       </section>
 
       {/* ── 미디어 (F5) — 유튜브=live, 업로드=초안+프리뷰(저장은 인프라 후) ── */}

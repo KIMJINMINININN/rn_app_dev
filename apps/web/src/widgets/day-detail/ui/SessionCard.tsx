@@ -96,10 +96,30 @@ export function SessionCard({ session }: SessionCardProps) {
 
       {/* 본문 섹션 — 데이터 미연동(F3/F4/F5 이후). 라벨 + 플레이스홀더만. */}
       <div className="mt-3 space-y-3 border-t border-[var(--border-subtle)] pt-3">
-        {/* TODO(F4): 세션-기술 로그(session_techniques) 연동 — 기술명 + DisciplineChip + (주짓수)BeltBadge + 그날 메모 행. */}
+        {/* 다룬 기술(#6-2) — 종목 칩 + 기술명 (+ 있으면 그날 메모). 없으면 안내. */}
         <section className="space-y-1">
           <SectionLabel>다룬 기술</SectionLabel>
-          <p className="text-body-xs-400 text-[var(--text-disabled)]">기술 기록 연동 예정</p>
+          {session.techniques.length > 0 ? (
+            <ul className="flex flex-col gap-1">
+              {session.techniques.map((t) => (
+                <li key={t.id} className="flex flex-col gap-0.5">
+                  <span className="flex items-center gap-1.5">
+                    <DisciplineChip discipline={t.discipline} size="xs" />
+                    <span className="min-w-0 truncate text-body-s-500 text-[var(--text-strong)]">
+                      {t.name}
+                    </span>
+                  </span>
+                  {t.day_memo_md && t.day_memo_md.trim() !== '' && (
+                    <div className="pl-1 text-body-xs-400 text-[var(--text-muted)]">
+                      <MarkdownView source={t.day_memo_md} />
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-body-xs-400 text-[var(--text-disabled)]">다룬 기술 없음</p>
+          )}
         </section>
 
         {/* TODO(F5): media 연동 — 내 영상/유튜브/외부 링크 카드 행(Design §9). */}

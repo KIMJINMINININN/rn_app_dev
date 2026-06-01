@@ -125,14 +125,19 @@ export async function fetchTaggedItems(tagNames: string[]): Promise<TaggedItems>
   if (sessionIds.length > 0) {
     const { data, error } = await supabase
       .from('sessions')
-      .select('*, session_disciplines(discipline), taggables(tags(name))')
+      .select(
+        '*, session_disciplines(discipline), taggables(tags(name)), session_techniques(day_memo_md, techniques(id, name, discipline))',
+      )
       .in('id', sessionIds)
       .order('trained_on', { ascending: false });
     if (error) throw error;
-    sessions = (data ?? []).map(({ session_disciplines, taggables, ...s }) => ({
+    sessions = (data ?? []).map(({ session_disciplines, taggables, session_techniques, ...s }) => ({
       ...s,
       disciplines: (session_disciplines ?? []).map((sd) => sd.discipline),
       tags: (taggables ?? []).map((t) => t.tags?.name).filter((n): n is string => !!n),
+      techniques: (session_techniques ?? [])
+        .filter((st) => st.techniques != null)
+        .map((st) => ({ ...st.techniques!, day_memo_md: st.day_memo_md })),
     })) as SessionWithDisciplines[];
   }
 

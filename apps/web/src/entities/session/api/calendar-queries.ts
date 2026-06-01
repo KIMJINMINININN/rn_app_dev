@@ -53,15 +53,20 @@ export async function fetchDaySessions(dateISO: string): Promise<SessionWithDisc
   const supabase = createSupabaseBrowserClient();
   const { data, error } = await supabase
     .from('sessions')
-    .select('*, session_disciplines(discipline), taggables(tags(name))')
+    .select(
+      '*, session_disciplines(discipline), taggables(tags(name)), session_techniques(day_memo_md, techniques(id, name, discipline))',
+    )
     .eq('trained_on', dateISO)
     .order('created_at', { ascending: true });
   if (error) throw error;
-  // sessions Row는 Session 모델과 1:1(snake_case·nullability 동일) → 중첩 종목·태그만 평탄화해 합성.
+  // sessions Row는 Session 모델과 1:1(snake_case·nullability 동일) → 중첩 종목·태그·기술만 평탄화해 합성.
   // 구성 형태가 SessionWithDisciplines와 정확히 일치하므로 마지막에 narrow 캐스트만 적용(any 미사용).
-  return (data ?? []).map(({ session_disciplines, taggables, ...s }) => ({
+  return (data ?? []).map(({ session_disciplines, taggables, session_techniques, ...s }) => ({
     ...s,
     disciplines: (session_disciplines ?? []).map((sd) => sd.discipline),
     tags: (taggables ?? []).map((t) => t.tags?.name).filter((n): n is string => !!n),
+    techniques: (session_techniques ?? [])
+      .filter((st) => st.techniques != null)
+      .map((st) => ({ ...st.techniques!, day_memo_md: st.day_memo_md })),
   })) as SessionWithDisciplines[];
 }
