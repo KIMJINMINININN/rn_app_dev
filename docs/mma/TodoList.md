@@ -20,6 +20,7 @@
 - [x] **6-F5. 미디어** — `entities/media/ui`(YoutubeEmbed·MediaThumb·VideoPlayer) + `features/media-upload`(MediaDraft+한도검증 / MediaPicker: 유튜브 링크 실동작·파일 검증+object-URL 프리뷰) + `/api/media/sign-upload`(env-gated dormant Route, `<uid>/videos/<uuid>`) + F3 미디어 섹션 연결. **유튜브=백엔드0 완전동작**, 업로드=dormant. architect APPROVED(object-URL 누수 수정 후), typecheck·lint·build·gitleaks ✅ — `894d95d` *(2026-06-01)*
 - [x] **6-F6. 메모/주의점** — `shared/ui/markdown/MarkdownView`(marked→DOMPurify strict allowlist→inject, XSS 안전, SSR-safe useSyncExternalStore, 토큰 prose) + `shared/ui/callout/Callout`(주의점 강조 §9.3) + SessionCard memo_md & 기술상세 설명/주의점 연결. `marked` 추가. **architect XSS 적대 검증 APPROVED**, typecheck·lint·build·gitleaks ✅ — `fb1eeaa` *(2026-06-01)*
 - [x] **6-F7. 태그+태그검색** — `features/tag-filter`(순수 tags helpers + **TagInput** 콤보박스: 자동완성·신규생성·AND 필터 양모드, TagChip 재사용, combobox a11y[role/aria-*·↑↓/Enter/Esc/쉼표/Backspace]) + `(app)/tags` 태그 보기(§7f, 선택 AND + 그룹 EmptyState, 정적) + F3 세션에디터 태그 stub 연결. persist dormant(tag_ids:[] seam). architect APPROVED(a11y 폴리시 반영), typecheck·lint·build·gitleaks ✅ — `d6fee4a` *(2026-06-01)*
+- [x] **6-F8. 글로벌 검색** — `features/global-search`(searchAll[server-only env-gated dormant→search_all RPC] + groupResults/resultHref + SearchResults[기술/세션/태그 그룹] + **Highlight**[XSS 안전 regex-escape+React split]) + `/search` RSC 연동(?q, ƒ 유지). architect APPROVED(XSS/ReDoS·dormancy·exhaustiveness 검증), typecheck·lint·build·gitleaks ✅ — `b472c66` *(2026-06-01)*
 - [x] **5. 인증 골격** (F1) login/signup/logout Server Action + client form + `shared/ui/Input` + `src/proxy.ts`(Next 16 세션 미들웨어) + env-gated 가드/프로필 — `d44df32` (실동작은 인프라, 랭크/프로필 편집은 후속) *(2026-06-01)*
 - [x] **4. 앱 셸 + 내비 + 글로벌 검색바** `widgets/app-shell`(SideNav[데스크톱]→BottomNav[모바일] 반응형·TopBar+SearchBar·ThemeToggle·빨강 FAB) + `shared/ui`(Button/IconButton/EmptyState/Skeleton/theme[FOUC]) + `app/{(app),(auth)}` 라우트 스캐폴드(걸어다니는 셸) + 루트 layout `data-theme`/FOUC 주입 + Providers(QueryClient) — typecheck·build ✅, FSD 깨끗, 의존성 0 추가 *(커밋 대기, DB/auth는 스텁)*
 
@@ -80,7 +81,9 @@
   - ↪ 남음(후속): 메모 **편집** 시 지원 마크다운 안내(소제목 h3~) · h1/h2·표는 현재 텍스트로만 표시(의도) · F4 상세 실 description_md/details_md 연결(인프라)
 - [x] **F7 태그+태그검색** — `d6fee4a`(2026-06-01): `features/tag-filter`(순수 tags helpers + **TagInput** 콤보박스[자동완성·신규생성·AND 필터 양모드, TagChip 재사용, combobox a11y]) + `(app)/tags` 태그 보기(§7f, 선택 AND + 그룹 EmptyState, 정적) + F3 세션에디터 태그 stub 연결. 태그 persist는 dormant(tag_ids:[] seam). architect APPROVED.
   - ↪ 남음(인프라/후속): 사용자 태그 조회(autocomplete suggestions) · 선택 태그 **AND 조회**(taggables→기술/세션 그룹 결과) · 세션/기술 저장 시 **이름→tags upsert→tag_id 매핑** · 태그칩 클릭→`/tags` 진입 · 필터 모드 no-match 안내 · 태그 색상/사용빈도순(P1)
-- [ ] F8 글로벌 검색(`search_all`) · F9 배지 일관 적용
+- [x] **F8 글로벌 검색** — `b472c66`(2026-06-01): `features/global-search`(SearchResult 모델+groupResults+resultHref + **searchAll**[server-only, env-gated dormant→[], search_all RPC] + **SearchResults**[기술/세션/태그 그룹] + **Highlight**[XSS 안전]) + `/search` RSC 연동(?q→searchAll, ƒ 유지). SearchBar 기존 연결. architect APPROVED(XSS/ReDoS·dormancy 검증).
+  - ↪ 남음(인프라/후속): 실 `search_all` RPC 동작(플래그 ON) · RPC **DISTINCT(result_type,result_id)** 확인 · RPC 에러 서버 로깅 · `/calendar?date=` 딥링크 처리(세션 결과 진입) · (P1) 패싯 필터(종목·벨트·기간)
+- [ ] F9 배지 일관 적용
 
 ### 7. 모바일 (P0 = WebView)
 - [ ] `apps/mobile` WebView가 MMA 웹 로드 + auth 브릿지 점검 *(네이티브 촬영 브릿지는 P1)*
