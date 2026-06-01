@@ -57,6 +57,11 @@
 - ↪ 남음: **실 로그인 동작=인프라**(실 Supabase + 플래그 ON) · 표시명/타임존/**종목별 랭크 편집 UI(F1-AC3/AC4, user_ranks upsert)** · 소셜 로그인(T6) · email confirm 분기 확정(T5) · 모바일 토큰 핸드오프(§10)
 - ⚠️ 인프라 메모: `.env.local`에 **냉장고(레퍼런스) 프로젝트의 stale Supabase 값**(+COUPANG/KURLY/BAEMIN 플래그) 잔존 → 인프라 때 MMA 키로 **교체** 필요
 
+### 5b. F1 후속 — 프로필/랭크 편집 UI  *(인증 골격에서 분리, 미뤄둠 2026-06-01)*
+- [ ] `profile`: 표시명·타임존(기본 Asia/Seoul) 편집 (F1-AC3, `profiles` update)
+- [ ] **종목별 랭크 편집** (F1-AC4): bjj=BeltBadge+스트라이프(0~4), 비bjj=레벨(입문/중급/고급) — `entities/rank`·`BeltBadge` 재사용, `user_ranks` upsert(`userRankUpsertSchema`)
+- ↪ 실제 저장은 인프라(실 Supabase). 지금은 UI + 휴면 액션(env-gated)까지. profile 페이지의 랭크 placeholder를 실 편집 UI로 대체.
+
 ### 6. P0 기능 — Develop §12 (빌드 순서), 화면 Design §7
 - [ ] F2 캘린더(월간+하루상세, react-calendar 커스텀 + `calendar_day_summary`)
 - [ ] F3 세션 기록(`session-editor` 바텀시트/모달 + `log_session` RPC)
