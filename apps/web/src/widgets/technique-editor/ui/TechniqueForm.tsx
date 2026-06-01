@@ -1,8 +1,8 @@
 'use client';
 
-import { useMemo, useState, useTransition } from 'react';
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { createTechnique, updateTechnique } from '@/features/edit-technique';
@@ -12,9 +12,11 @@ import {
   CATEGORY_LABEL,
   POSITION_LABEL,
   categoriesForDiscipline,
+  fetchTechniqueById,
   techniqueInsertSchema,
   type TechniqueInsert,
 } from '@/entities/technique';
+import { isAuthEnabled } from '@/shared/api/supabase/env';
 import { DisciplineChip, DISCIPLINE_META, STRIKING_STYLE_LABEL, usesBelt } from '@/entities/discipline';
 import { BeltBadge, BELT_META } from '@/entities/rank';
 import {
@@ -47,12 +49,14 @@ import { Button, Input } from '@/shared/ui';
  *  - 벨트 적합도는 주짓수(usesBelt)만 노출 — 비bjj면 belt/belt_stripes = null.
  *  - 타격 스타일은 striking만 노출 — 그 외엔 null.
  *
- * 가짜 데이터 금지: 폼은 빈/기본값으로 시작한다. 편집 prefill은 인프라 후(아래 seam).
- * 미디어 드래프트/태그 이름은 수집하되 저장으로 흘리지 않는다(영속화 후속, 아래 handleSave seam).
+ * 폼은 빈/기본값으로 시작한다. **편집 prefill**(F4-AC3): mode==='edit' 이고 AUTH ON이면
+ * fetchTechniqueById(techniqueId)로 기존 기술을 읽어 한 번 폼 상태에 채운다(아래 prefill 블록).
+ * AUTH OFF(개발 셸)면 쿼리가 비활성 → 빈 폼 유지(휴면, calendar/library 게이팅과 동일).
+ * 미디어/태그 prefill은 별도 데이터(media_links/taggables) — 후속 TODO(영속화 작업과 함께).
+ * create 모드 동작은 변경 없음(빈 시작). 미디어 드래프트/태그 이름은 수집하되 저장으로
+ * 흘리지 않는다(영속화 후속, 아래 handleSave seam).
  */
 
-// TODO(infra): mode === 'edit' 시 techniqueId로 기존 기술을 페치해 폼 prefill.
-//   현재는 빈 폼(셸) — create 경로만 의도적으로 채운다(prefill은 인프라 후로 보류).
 export interface TechniqueFormProps {
   mode: 'create' | 'edit';
   /** 편집 모드에서 대상 기술 id(생성 모드면 미지정). */
@@ -93,7 +97,7 @@ export function TechniqueForm({ mode, techniqueId }: TechniqueFormProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  // ── 로컬 폼 상태 (가짜 데이터 없이 빈/기본값으로 시작) ──
+  // ── 로컬 폼 상태 (빈/기본값으로 시작; 편집 모드는 아래 prefill 블록이 기존 기술로 채운다) ──
   const [name, setName] = useState('');
   const [discipline, setDiscipline] = useState<Discipline | ''>('');
   const [category, setCategory] = useState<TechniqueCategory | ''>('');
@@ -109,6 +113,36 @@ export function TechniqueForm({ mode, techniqueId }: TechniqueFormProps) {
   const [tagNames, setTagNames] = useState<string[]>([]);
 
   const [pending, startTransition] = useTransition();
+
+  // ── 편집 prefill (F4-AC3) ──
+  // mode==='edit' + AUTH ON 일 때만 기존 기술을 페치한다(키는 상세/카드와 공유 → 캐시 재사용).
+  // AUTH OFF면 비활성 → existing=undefined → 폼은 빈 채로(휴면 셸) 유지.
+  const isEdit = mode === 'edit' && !!techniqueId;
+  const { data: existing } = useQuery({
+    queryKey: ['technique', techniqueId],
+    queryFn: () => fetchTechniqueById(techniqueId!),
+    enabled: isEdit && isAuthEnabled(),
+  });
+
+  // 같은 기술을 두 번 채워 사용자 편집을 덮어쓰지 않도록, prefill 한 기술 id를 기억한다.
+  // (existing 이 새 id로 바뀌면 다시 채운다 — id 변화 기준 1회.)
+  const prefilledIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!existing) return;
+    if (prefilledIdRef.current === existing.id) return;
+    prefilledIdRef.current = existing.id;
+
+    setName(existing.name);
+    setDiscipline(existing.discipline);
+    setCategory(existing.category);
+    setPosition(existing.position ?? '');
+    setBelt(existing.belt ?? '');
+    setBeltStripes(existing.belt_stripes ?? 0);
+    setStrikingStyle(existing.striking_style ?? '');
+    setDescriptionMd(existing.description_md ?? '');
+    setDetailsMd(existing.details_md ?? '');
+    // 미디어 드래프트/태그는 별도 테이블(media_links/taggables) — prefill은 후속 TODO.
+  }, [existing]);
 
   // 종목에 따라 가능한 분류 목록(PRD §4.2). 종목 미선택이면 빈 목록.
   const categoryOptions = useMemo<TechniqueCategory[]>(
