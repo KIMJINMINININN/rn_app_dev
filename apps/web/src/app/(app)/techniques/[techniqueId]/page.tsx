@@ -31,19 +31,29 @@ export default async function TechniqueDetailPage({
 }: {
   params: Promise<{ techniqueId: string }>;
 }) {
-  // 라우팅 검증용으로만 사용(실데이터 페치는 인프라 이후 F4).
-  await params;
+  // techniqueId는 '수정' 링크/편집 라우트에 사용(실데이터 페치는 인프라 이후 F4).
+  const { techniqueId } = await params;
 
   return (
     <article className="mx-auto max-w-3xl">
-      {/* 뒤로 — 라이브러리 (Design §7d 헤더) */}
-      <Link
-        href="/techniques"
-        className="mb-4 inline-flex items-center gap-1 rounded-xxs py-1 text-button-s text-[var(--text-muted)] outline-none transition-colors pointer-hover:text-[var(--text-default)] focus-visible:shadow-[var(--ring-focus)]"
-      >
-        <ChevronLeftIcon width={16} height={16} />
-        라이브러리
-      </Link>
+      {/* 헤더 행 — 뒤로(라이브러리) + 수정 링크 (Design §7d 헤더) */}
+      <div className="mb-4 flex items-center justify-between gap-2">
+        <Link
+          href="/techniques"
+          className="inline-flex items-center gap-1 rounded-xxs py-1 text-button-s text-[var(--text-muted)] outline-none transition-colors pointer-hover:text-[var(--text-default)] focus-visible:shadow-[var(--ring-focus)]"
+        >
+          <ChevronLeftIcon width={16} height={16} />
+          라이브러리
+        </Link>
+
+        {/* 수정 → 편집 폼(F4-AC1). Button secondary/sm 토큰을 입은 Link(저장은 도먼시). */}
+        <Link
+          href={`/techniques/${techniqueId}/edit`}
+          className="inline-flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-xxs px-2.5 text-button-s font-medium select-none border border-[var(--border-strong)] bg-[var(--surface-base)] text-[var(--text-default)] outline-none transition-colors duration-[var(--duration-fast)] ease-[var(--ease-standard)] pointer-hover:bg-[var(--surface-sunken)] focus-visible:shadow-[var(--ring-focus)]"
+        >
+          수정
+        </Link>
+      </div>
 
       {/* 제목 placeholder */}
       <h1 className="text-heading-l text-[var(--text-strong)]">기술 이름</h1>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import Link from 'next/link';
 import { toast } from 'sonner';
 
 import { logSession, logSessionInputSchema } from '@/features/log-session';
@@ -256,17 +257,22 @@ export function SessionEditorForm({ initialDate, onDone }: SessionEditorFormProp
         )}
       </section>
 
-      {/* ── 다룬 기술 (STUB — F4) ── */}
+      {/* ── 다룬 기술 (STUB — F4) ──
+          세션-기술 연결(검색·첨부)은 기술 데이터 + 연결 플로우가 필요해 도먼시다(handleSave의 techniques:[] 유지).
+          전체 기술 검색을 여기 끼워 넣지 않는다(인프라). 대신 유일한 실제 액션 — "새 기술 만들기" 링크(F4-AC1)만 둔다. */}
       <section className="flex flex-col gap-2 border-t border-[var(--border-subtle)] pt-4">
         <SectionLabel>다룬 기술</SectionLabel>
-        <div>
-          <Button variant="secondary" size="sm" disabled title="기술 라이브러리(F4) 연동 후">
-            + 기술 검색/추가
-          </Button>
-        </div>
-        <p className="text-body-xs-400 text-[var(--text-disabled)]">
-          기술 라이브러리(F4) 연동 후 사용할 수 있어요.
+        <p className="text-body-xs-400 text-[var(--text-muted)]">
+          세션에 기술 연결은 인프라 연결 후 추가됩니다. 먼저 기술을 만들어 둘 수 있어요.
         </p>
+        <div>
+          <Link
+            href="/techniques/new"
+            className="inline-flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-xxs px-2.5 text-button-s font-medium select-none border border-[var(--border-strong)] bg-[var(--surface-base)] text-[var(--text-default)] outline-none transition-colors duration-[var(--duration-fast)] ease-[var(--ease-standard)] pointer-hover:bg-[var(--surface-sunken)] focus-visible:shadow-[var(--ring-focus)]"
+          >
+            + 새 기술 만들기
+          </Link>
+        </div>
       </section>
 
       {/* ── 미디어 (F5) — 유튜브=live, 업로드=초안+프리뷰(저장은 인프라 후) ── */}

@@ -1,0 +1,393 @@
+'use client';
+
+import { useMemo, useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
+
+import { createTechnique, updateTechnique } from '@/features/edit-technique';
+import { MediaPicker, type MediaDraft } from '@/features/media-upload';
+import { TagInput } from '@/features/tag-filter';
+import {
+  CATEGORY_LABEL,
+  POSITION_LABEL,
+  categoriesForDiscipline,
+  techniqueInsertSchema,
+  type TechniqueInsert,
+} from '@/entities/technique';
+import { DisciplineChip, DISCIPLINE_META, STRIKING_STYLE_LABEL, usesBelt } from '@/entities/discipline';
+import { BeltBadge, BELT_META } from '@/entities/rank';
+import {
+  BELTS,
+  DISCIPLINES,
+  POSITION_KINDS,
+  STRIKING_STYLES,
+  type Belt,
+  type Discipline,
+  type PositionKind,
+  type StrikingStyle,
+  type TechniqueCategory,
+} from '@/shared/model/enums';
+import { Button, Input } from '@/shared/ui';
+
+/**
+ * TechniqueForm — 기술 생성/편집 폼 본문 (F4-AC1 / Design §7d · Develop §874).
+ *
+ * SessionEditorForm(F3)의 관용구를 그대로 미러한다: 로컬 폼 상태(useState) 소유,
+ * FIELD_BASE 토큰 select/textarea, Field/SectionLabel 헬퍼, useTransition+toast 제출,
+ * MediaPicker(F5)+TagInput(F7) 조합. 폼이 여러 feature를 조합하므로 **widget**으로 배치한다
+ * (widgets/session-editor 결정과 동일 — feature→feature 금지).
+ *
+ * 저장은 **인프라 연결 전까지 도먼시**다(NEXT_PUBLIC_AUTH_ENABLED OFF):
+ * createTechnique/updateTechnique action이 네트워크 호출 없이 안내를 반환하고,
+ * 폼은 토스트로 알린 뒤 그대로 둔다(사용자가 셸을 계속 탐색). 인프라 단계에서 플래그를 켜면 그대로 INSERT/UPDATE.
+ *
+ * 조건부 필드(PRD §4.1·§4.3):
+ *  - 분류는 categoriesForDiscipline(종목)로 필터 — 종목 변경 시 더 이상 유효하지 않으면 분류 리셋.
+ *  - 벨트 적합도는 주짓수(usesBelt)만 노출 — 비bjj면 belt/belt_stripes = null.
+ *  - 타격 스타일은 striking만 노출 — 그 외엔 null.
+ *
+ * 가짜 데이터 금지: 폼은 빈/기본값으로 시작한다. 편집 prefill은 인프라 후(아래 seam).
+ * 미디어 드래프트/태그 이름은 수집하되 저장으로 흘리지 않는다(영속화 후속, 아래 handleSave seam).
+ */
+
+// TODO(infra): mode === 'edit' 시 techniqueId로 기존 기술을 페치해 폼 prefill.
+//   현재는 빈 폼(셸) — create 경로만 의도적으로 채운다(prefill은 인프라 후로 보류).
+export interface TechniqueFormProps {
+  mode: 'create' | 'edit';
+  /** 편집 모드에서 대상 기술 id(생성 모드면 미지정). */
+  techniqueId?: string;
+}
+
+/** Input 원자와 동일한 토큰 스타일의 native 컨트롤 클래스(select/textarea 공용) — SessionEditorForm과 동일. */
+const FIELD_BASE = [
+  'w-full rounded-xs px-3',
+  'bg-[var(--surface-base)] text-body-m-400 text-[var(--text-strong)]',
+  'border border-[var(--border-strong)]',
+  'transition-colors duration-[var(--duration-fast)] ease-[var(--ease-standard)]',
+  'outline-none focus-visible:shadow-[var(--ring-focus)]',
+  'disabled:cursor-not-allowed disabled:opacity-50',
+].join(' ');
+
+/** 라벨 + 컨트롤 세로 묶음(Input 원자의 래퍼와 동일 간격). */
+function Field({ label, htmlFor, children }: { label: string; htmlFor: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={htmlFor} className="text-body-s-500 text-[var(--text-default)]">
+        {label}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+/** 필수/섹션 공통 라벨(SessionEditorForm SectionLabel 관용구). */
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return <p className="text-button-xs text-[var(--text-muted)]">{children}</p>;
+}
+
+/** 0~4 그랄 옵션. */
+const STRIPE_OPTIONS = [0, 1, 2, 3, 4] as const;
+
+export function TechniqueForm({ mode, techniqueId }: TechniqueFormProps) {
+  const router = useRouter();
+
+  // ── 로컬 폼 상태 (가짜 데이터 없이 빈/기본값으로 시작) ──
+  const [name, setName] = useState('');
+  const [discipline, setDiscipline] = useState<Discipline | ''>('');
+  const [category, setCategory] = useState<TechniqueCategory | ''>('');
+  const [position, setPosition] = useState<PositionKind | ''>('');
+  const [belt, setBelt] = useState<Belt | ''>('');
+  const [beltStripes, setBeltStripes] = useState<number>(0);
+  const [strikingStyle, setStrikingStyle] = useState<StrikingStyle | ''>('');
+  const [descriptionMd, setDescriptionMd] = useState('');
+  const [detailsMd, setDetailsMd] = useState('');
+  // 미디어 초안(F5) — 영속화 전이라 저장으로 흘리지 않고 로컬 수집만(아래 handleSave seam 참고).
+  const [mediaDrafts, setMediaDrafts] = useState<MediaDraft[]>([]);
+  // 태그 이름(F7) — TagInput으로 수집되지만 영속화(이름→tags 행→taggables)는 인프라 후(아래 handleSave seam).
+  const [tagNames, setTagNames] = useState<string[]>([]);
+
+  const [pending, startTransition] = useTransition();
+
+  // 종목에 따라 가능한 분류 목록(PRD §4.2). 종목 미선택이면 빈 목록.
+  const categoryOptions = useMemo<TechniqueCategory[]>(
+    () => (discipline ? categoriesForDiscipline(discipline) : []),
+    [discipline],
+  );
+
+  const showBelt = discipline !== '' && usesBelt(discipline);
+  const showStriking = discipline === 'striking';
+
+  // 이름·종목·분류가 필수(***) — 셋이 채워지고 제출 중이 아닐 때만 저장 가능.
+  const canSave = name.trim() !== '' && discipline !== '' && category !== '' && !pending;
+
+  /** 종목 변경 — 현재 분류가 새 종목에서 유효하지 않으면 리셋. 벨트/타격 필드도 비-해당 종목이면 비운다. */
+  function handleDisciplineChange(next: Discipline | '') {
+    setDiscipline(next);
+    if (next === '') {
+      setCategory('');
+      return;
+    }
+    // 현재 선택한 분류가 새 종목 목록에 없으면 리셋.
+    if (category !== '' && !categoriesForDiscipline(next).includes(category)) {
+      setCategory('');
+    }
+    // 벨트는 주짓수에서만, 타격 스타일은 striking에서만 의미가 있다 — 해당 안 되면 비운다.
+    if (!usesBelt(next)) {
+      setBelt('');
+      setBeltStripes(0);
+    }
+    if (next !== 'striking') {
+      setStrikingStyle('');
+    }
+  }
+
+  function handleSave() {
+    // canSave 가드와 중복이나 타입 좁히기 + 명시적 안내용(zod 일반 enum 메시지 대신).
+    if (discipline === '') {
+      toast.error('종목을 선택하세요.');
+      return;
+    }
+    if (category === '') {
+      toast.error('분류를 선택하세요.');
+      return;
+    }
+
+    const candidate = {
+      name: name.trim(),
+      discipline,
+      category,
+      position: position === '' ? null : position,
+      striking_style: showStriking && strikingStyle !== '' ? strikingStyle : null,
+      belt: showBelt && belt !== '' ? belt : null,
+      belt_stripes: showBelt && belt !== '' ? beltStripes : null,
+      description_md: descriptionMd.trim() || null,
+      details_md: detailsMd.trim() || null,
+      visibility: 'private' as const,
+    };
+
+    const parsed = techniqueInsertSchema.safeParse(candidate);
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0]?.message ?? '입력값을 확인하세요.');
+      return;
+    }
+    const payload: TechniqueInsert = parsed.data;
+
+    // TODO(infra): mediaDrafts → media_assets 생성 + 기술 연결(media_links), tagNames → tags upsert → taggables.
+    //   현재는 드래프트/이름만 수집하고 저장으로 흘리지 않는다(영속화 후속). void로 사용 표시 — 셸 단계 의도.
+    void mediaDrafts;
+    void tagNames;
+
+    startTransition(async () => {
+      const res =
+        mode === 'edit' && techniqueId
+          ? await updateTechnique(techniqueId, payload)
+          : await createTechnique(payload);
+
+      if (res.ok) {
+        toast.success('저장됨');
+        if (mode === 'create') {
+          router.push('/techniques');
+        } else {
+          router.back();
+        }
+      } else if (res.dormant) {
+        toast.info(res.error); // 인프라 전 안내 — 폼 유지(사용자가 셸 탐색).
+      } else {
+        toast.error(res.error);
+      }
+    });
+  }
+
+  return (
+    <div className="flex flex-col gap-5">
+      {/* ── 이름 * (필수) ── */}
+      <Input
+        label="이름"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        placeholder="예: 베림볼로"
+        autoComplete="off"
+      />
+
+      {/* ── 종목 * (필수, 단일 선택) ── */}
+      <section className="flex flex-col gap-2">
+        <Field label="종목" htmlFor="tf-discipline">
+          <select
+            id="tf-discipline"
+            value={discipline}
+            onChange={(e) => handleDisciplineChange(e.target.value as Discipline | '')}
+            className={`h-10 ${FIELD_BASE}`}
+          >
+            <option value="">선택하세요</option>
+            {DISCIPLINES.map((d) => (
+              <option key={d} value={d}>
+                {DISCIPLINE_META[d].label}
+              </option>
+            ))}
+          </select>
+        </Field>
+        {discipline === '' ? (
+          <p className="text-body-xs-400 text-[var(--text-muted)]">종목을 선택하세요.</p>
+        ) : (
+          // 선택 종목 미리보기 칩(live).
+          <DisciplineChip discipline={discipline} />
+        )}
+      </section>
+
+      {/* ── 분류 * (필수, 종목별 필터) ── */}
+      <Field label="분류" htmlFor="tf-category">
+        <select
+          id="tf-category"
+          value={category}
+          onChange={(e) => setCategory(e.target.value as TechniqueCategory | '')}
+          disabled={discipline === ''}
+          className={`h-10 ${FIELD_BASE}`}
+        >
+          <option value="">{discipline === '' ? '종목을 먼저 선택' : '선택하세요'}</option>
+          {categoryOptions.map((c) => (
+            <option key={c} value={c}>
+              {CATEGORY_LABEL[c]}
+            </option>
+          ))}
+        </select>
+      </Field>
+
+      {/* ── 포지션 (선택) ── */}
+      <Field label="포지션 (선택)" htmlFor="tf-position">
+        <select
+          id="tf-position"
+          value={position}
+          onChange={(e) => setPosition(e.target.value as PositionKind | '')}
+          className={`h-10 ${FIELD_BASE}`}
+        >
+          <option value="">선택 안 함</option>
+          {POSITION_KINDS.map((p) => (
+            <option key={p} value={p}>
+              {POSITION_LABEL[p]}
+            </option>
+          ))}
+        </select>
+      </Field>
+
+      {/* ── 벨트 적합도 (주짓수만, 선택) ── */}
+      {showBelt && (
+        <section className="flex flex-col gap-2 border-t border-[var(--border-subtle)] pt-4">
+          <SectionLabel>벨트 적합도 (선택)</SectionLabel>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="벨트" htmlFor="tf-belt">
+              <select
+                id="tf-belt"
+                value={belt}
+                onChange={(e) => setBelt(e.target.value as Belt | '')}
+                className={`h-10 ${FIELD_BASE}`}
+              >
+                <option value="">선택 안 함</option>
+                {BELTS.map((b) => (
+                  <option key={b} value={b}>
+                    {BELT_META[b].label}
+                  </option>
+                ))}
+              </select>
+            </Field>
+
+            <Field label="그랄(stripe)" htmlFor="tf-belt-stripes">
+              <select
+                id="tf-belt-stripes"
+                value={beltStripes}
+                onChange={(e) => setBeltStripes(Number(e.target.value))}
+                disabled={belt === ''}
+                className={`h-10 ${FIELD_BASE}`}
+              >
+                {STRIPE_OPTIONS.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          </div>
+          {belt !== '' && (
+            // 벨트 미리보기 배지(live).
+            <div className="pt-1">
+              <BeltBadge belt={belt} stripes={beltStripes} size="md" />
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* ── 타격 스타일 (타격만, 선택) ── */}
+      {showStriking && (
+        <Field label="타격 스타일 (선택)" htmlFor="tf-striking-style">
+          <select
+            id="tf-striking-style"
+            value={strikingStyle}
+            onChange={(e) => setStrikingStyle(e.target.value as StrikingStyle | '')}
+            className={`h-10 ${FIELD_BASE}`}
+          >
+            <option value="">선택 안 함</option>
+            {STRIKING_STYLES.map((s) => (
+              <option key={s} value={s}>
+                {STRIKING_STYLE_LABEL[s]}
+              </option>
+            ))}
+          </select>
+        </Field>
+      )}
+
+      {/* ── 설명 (description_md) ── */}
+      <Field label="설명" htmlFor="tf-description">
+        <textarea
+          id="tf-description"
+          rows={4}
+          value={descriptionMd}
+          onChange={(e) => setDescriptionMd(e.target.value)}
+          placeholder="이 기술의 개념과 셋업을 마크다운으로 정리합니다."
+          className={`min-h-24 resize-y py-2 placeholder:text-[var(--text-disabled)] ${FIELD_BASE}`}
+        />
+      </Field>
+
+      {/* ── 주의점 / 디테일 (details_md, F6 — 상세 페이지가 Callout으로 렌더) ── */}
+      <Field label="주의점 / 디테일" htmlFor="tf-details">
+        <textarea
+          id="tf-details"
+          rows={3}
+          value={detailsMd}
+          onChange={(e) => setDetailsMd(e.target.value)}
+          placeholder="자주 하는 실수, 놓치기 쉬운 핵심 디테일."
+          className={`min-h-20 resize-y py-2 placeholder:text-[var(--text-disabled)] ${FIELD_BASE}`}
+        />
+      </Field>
+
+      {/* ── 미디어 (F5) — 유튜브=live, 업로드=초안+프리뷰(저장은 인프라 후) ── */}
+      <section className="flex flex-col gap-2 border-t border-[var(--border-subtle)] pt-4">
+        <SectionLabel>미디어</SectionLabel>
+        <MediaPicker value={mediaDrafts} onChange={setMediaDrafts} />
+        <p className="text-body-xs-400 text-[var(--text-muted)]">
+          첨부한 미디어는 인프라 연결 후 기술과 함께 저장됩니다.
+        </p>
+      </section>
+
+      {/* ── 태그 (F7) — 자유 태그 입력은 live, 저장은 인프라 후(tags/taggables 행 필요) ── */}
+      <section className="flex flex-col gap-2 border-t border-[var(--border-subtle)] pt-4">
+        <TagInput
+          value={tagNames}
+          onChange={setTagNames}
+          allowCreate
+          suggestions={[]}
+          label="태그"
+          placeholder="태그 추가 (예: 백테이크)"
+        />
+        <p className="text-body-xs-400 text-[var(--text-muted)]">
+          태그는 인프라 연결 후 기술과 함께 저장됩니다.
+        </p>
+      </section>
+
+      {/* ── 저장 CTA — 풀폭 빨강 lg (Design §7d). name·discipline 필수, pending 중 잠금 ── */}
+      <div className="border-t border-[var(--border-subtle)] pt-4">
+        <Button variant="primary" size="lg" block disabled={!canSave} onClick={handleSave}>
+          {pending ? '저장 중…' : '저장'}
+        </Button>
+      </div>
+    </div>
+  );
+}
