@@ -14,6 +14,7 @@ import { DisciplineChip, usesBelt } from '@/entities/discipline';
 import { BeltBadge } from '@/entities/rank';
 import { CLASS_TYPE_LABELS, type SessionWithDisciplines } from '@/entities/session';
 import { fetchTechniqueTagNames, TagChip } from '@/entities/tag';
+import { fetchTechniqueMedia, YoutubeEmbed, UploadVideo } from '@/entities/media';
 import { isAuthEnabled } from '@/shared/api/supabase/env';
 import { Callout, ChevronLeftIcon, EmptyState, MarkdownView, Skeleton } from '@/shared/ui';
 
@@ -82,6 +83,13 @@ export function TechniqueDetailView({ techniqueId }: TechniqueDetailViewProps) {
     enabled,
   });
 
+  // 붙은 미디어(#6-4 표시). 편집 폼과 동일 키 → 캐시 공유. enabled OFF면 비활성 → [].
+  const { data: techniqueMedia = [] } = useQuery({
+    queryKey: ['technique', techniqueId, 'media'],
+    queryFn: () => fetchTechniqueMedia(techniqueId),
+    enabled,
+  });
+
   return (
     <article className="mx-auto max-w-3xl">
       {/* ── 헤더 행 — 뒤로(라이브러리) + 수정 링크 (Design §7d 헤더). 모든 상태 공통 셸. ── */}
@@ -139,9 +147,25 @@ export function TechniqueDetailView({ techniqueId }: TechniqueDetailViewProps) {
 
           <hr className="my-5 border-[var(--border-subtle)]" />
 
-          {/* 미디어 행 — F5 미연동이라 스텁 유지(준비 중). */}
+          {/* 미디어(#6-4) — youtube=임베드 / upload=서명URL 재생. 없으면 스텁(레이아웃 유지). */}
           <h2 className="mb-2 text-heading-xs text-[var(--text-strong)]">미디어</h2>
-          <MediaStub />
+          {techniqueMedia.length > 0 ? (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {techniqueMedia.map((m) =>
+                m.kind === 'youtube' && m.youtube_video_id ? (
+                  <YoutubeEmbed
+                    key={m.id}
+                    videoId={m.youtube_video_id}
+                    title={m.title ?? undefined}
+                  />
+                ) : m.kind === 'upload' && m.storage_path ? (
+                  <UploadVideo key={m.id} storagePath={m.storage_path} />
+                ) : null,
+              )}
+            </div>
+          ) : (
+            <MediaStub />
+          )}
 
           {/* 설명 (Design §7d — 주의점 앞). MarkdownView(F6). 없으면 안내문. */}
           <h2 className="mb-2 mt-5 text-heading-xs text-[var(--text-strong)]">설명</h2>
