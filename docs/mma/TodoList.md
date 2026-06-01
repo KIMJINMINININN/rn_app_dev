@@ -100,13 +100,16 @@
   - 검증 ✅: 가짜 AWS키+RSA키 staged→차단(exit 1) / 동일 패턴 `docs/`→allowlist 통과 / `.env.example` placeholder→오탐 없음 / 실제 커밋이 훅 통과(`no leaks found`).
   - ↪ 남음(인프라): GitHub push protection ON(서버측 이중 방어) · 진짜 키는 `.env.local`(gitignore, allowlist 아님 → 강제 add돼도 차단).
 
-## 🟥 인프라 — **맨 마지막에 몰아서** — Develop §13
-- [ ] `supabase init` + `config.toml` (bucket `training-media`, `file_size_limit` 등 §4.1)
-- [ ] 새 Supabase 프로젝트 생성 → `pnpm web db:push` (0001~0015 적용)
-- [ ] 로컬 `supabase db reset`로 **마이그레이션 실제 검증** (현재까지 파일만, 미검증)
-- [ ] `pnpm web db:types` → 클라이언트 `Database` 제네릭 적용 (placeholder 대체)
-- [ ] `.env.local` 키 작성 — **절대 커밋 금지** (push protection / gitleaks)
-- [ ] Vercel 프로젝트 + env → 배포
+## 🟥 인프라 — Develop §13  *(진행 중 2026-06-01)*
+- [x] `supabase init` + `config.toml` (bucket `training-media`·100MiB·email confirm off, §4.1) — `ddf530d`·`b5da69a`
+- [x] 새 Supabase 프로젝트 생성(**the-others-mma**, Seoul, ref `cbjahigkhlvttnpmfdls`) + `supabase login`/`link` + `pnpm web db:push` (0001~0015 원격 적용) — 사장님
+- [x] 로컬 `supabase db reset`로 **마이그레이션 실제 검증** (start+reset 2회 클린, 11테이블·4함수·뷰·RLS12·버킷)
+- [x] `pnpm web db:types` → 실 `Database` 타입(727줄) + **placeholder 캐스트 전부 제거** — `635b0af`
+- [x] `.env.local` 키 작성(새 MMA sb_ 키, gitignore·미커밋) — 사장님 · `AUTH_ENABLED`는 아직 false(점등 전)
+- [ ] **읽기 경로 데이터 와이어링** — dormant UI(캘린더 daySummaries/세션·기술 목록·상세·태그 suggestions/AND·프로필 로드)를 실 페치로 + 쿼리 invalidate. + 미디어 실업로드 플로우 + log_session 다룬기술/태그/미디어 매핑. **(다음 큰 코드 작업)**
+- [ ] `NEXT_PUBLIC_AUTH_ENABLED=true` 점등(읽기 와이어링과 함께)
+- [ ] 원격 `training-media` 버킷 생성(대시보드) — 미디어 업로드 전
+- [ ] Vercel 프로젝트 + env → 배포 (+ Supabase Auth site_url/redirect에 Vercel 도메인)
 - [ ] (선택) 독립 레포 추출 여부 결정
 
 ## ❓ 열린 결정 / 콘텐츠 — Develop §14
