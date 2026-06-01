@@ -5,7 +5,7 @@
  */
 
 import { z } from 'zod';
-import { MEDIA_KINDS, VISIBILITIES } from '@/shared/model/enums';
+import { VISIBILITIES } from '@/shared/model/enums';
 import { isoTimestamp } from '@/shared/lib/zod';
 
 /**
