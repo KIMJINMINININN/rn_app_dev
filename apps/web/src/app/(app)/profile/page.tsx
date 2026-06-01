@@ -23,17 +23,49 @@ const DORMANT_PROFILE: ProfileUpdate = { display_name: '', timezone: 'Asia/Seoul
 export default async function ProfilePage() {
   let email: string | null = null;
   let userId: string | null = null;
+  // 인프라 전(플래그 OFF)·행 부재 시 도먼시 기본 유지 — 가짜 데이터 금지.
+  let initialProfile: ProfileUpdate = DORMANT_PROFILE;
+  let initialRanks: Partial<Record<RankTrack, UserRankUpsert>> = {};
 
   if (isAuthEnabled()) {
     const supabase = await createSupabaseServerClient();
     const { data } = await supabase.auth.getUser();
     email = data.user?.email ?? null;
     userId = data.user?.id ?? null;
-  }
 
-  // TODO(infra): profiles + user_ranks 조회로 초기값 채움(현재는 도먼시 기본/미설정).
-  const initialProfile = DORMANT_PROFILE;
-  const initialRanks: Partial<Record<RankTrack, UserRankUpsert>> = {};
+    if (userId) {
+      // 본인 profiles 1행 + user_ranks 전 트랙 병렬 로드(RLS 소유자 한정).
+      // 저장 액션이 revalidatePath('/profile')하므로 갱신 후 재진입 시 최신값이 다시 내려간다.
+      const [{ data: profile }, { data: rankRows }] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('display_name, timezone')
+          .eq('user_id', userId)
+          .maybeSingle(),
+        supabase
+          .from('user_ranks')
+          .select('track, belt, stripes, level, visibility')
+          .eq('user_id', userId),
+      ]);
+
+      if (profile) {
+        initialProfile = { display_name: profile.display_name, timezone: profile.timezone };
+      }
+      if (rankRows) {
+        const byTrack: Partial<Record<RankTrack, UserRankUpsert>> = {};
+        for (const r of rankRows) {
+          byTrack[r.track] = {
+            track: r.track,
+            belt: r.belt,
+            stripes: r.stripes,
+            level: r.level,
+            visibility: r.visibility,
+          };
+        }
+        initialRanks = byTrack;
+      }
+    }
+  }
 
   return (
     <section aria-labelledby="profile-heading" className="mx-auto max-w-3xl">
