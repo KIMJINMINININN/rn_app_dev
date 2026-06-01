@@ -1,4 +1,5 @@
 export * from './model/technique';
+export * from './api/technique-queries';
 export * from './lib/category-meta';
 export * from './lib/position-meta';
 export * from './ui/CategoryChip';

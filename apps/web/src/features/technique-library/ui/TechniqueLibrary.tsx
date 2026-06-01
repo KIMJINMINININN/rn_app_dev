@@ -1,8 +1,10 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 
-import type { Technique } from '@/entities/technique';
+import { fetchTechniques } from '@/entities/technique';
+import { isAuthEnabled } from '@/shared/api/supabase/env';
 import { Button, EmptyState, TechniqueIcon } from '@/shared/ui';
 
 import {
@@ -19,18 +21,23 @@ import { TechniqueFilterBar } from './TechniqueFilterBar';
  * TechniqueLibrary — 라이브러리 클라이언트 아일랜드 (F4-AC2/AC4 / Design §7d).
  *
  * 필터 상태(useState)를 소유하고 TechniqueFilterBar + 결과 그리드를 조합한다.
- * 순수 filterAndSortTechniques 결과를 useMemo 로 메모이즈해 카드 그리드로 렌더.
+ * TanStack Query로 entity api(fetchTechniques)에서 사용자 기술을 직접 읽고,
+ * 순수 filterAndSortTechniques 결과를 useMemo 로 메모이즈해 카드 그리드로 렌더한다.
  *
- * 데이터 휴면(infra 전): RSC page 가 techniques=[](빈 배열)을 내려주므로 결과는 비어
- * EmptyState 로 떨어진다. 필터 활성 여부에 따라 두 가지 빈 상태를 구분한다
- * (가짜 기술 레코드 금지 — 인프라 연결 시 동일 컴포넌트가 실데이터로 채워진다).
+ * 데이터: 쿼리는 `enabled: isAuthEnabled()` 로 게이팅 — AUTH ON(현재)이면 실데이터,
+ * AUTH OFF(개발 셸)면 비활성 → 기본값([])이 유지되어 결과가 비어 EmptyState 로 떨어진다
+ * (가짜 기술 레코드 금지 — 휴면 빈 상태, calendar-screen 패턴과 동일).
+ * 필터 활성 여부에 따라 두 가지 빈 상태를 구분한다.
  */
-export interface TechniqueLibraryProps {
-  techniques: Technique[];
-}
-
-export function TechniqueLibrary({ techniques }: TechniqueLibraryProps) {
+export function TechniqueLibrary() {
   const [filters, setFilters] = useState<TechniqueFilters>(DEFAULT_TECHNIQUE_FILTERS);
+
+  // techniques(최근순). enabled OFF면 기본 [](휴면 → EmptyState). 저장(F4)은 ['techniques'] invalidate로 갱신.
+  const { data: techniques = [] } = useQuery({
+    queryKey: ['techniques', 'list'],
+    queryFn: fetchTechniques,
+    enabled: isAuthEnabled(),
+  });
 
   const visible = useMemo(
     () => filterAndSortTechniques(techniques, filters),

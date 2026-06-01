@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { createTechnique, updateTechnique } from '@/features/edit-technique';
@@ -90,6 +91,7 @@ const STRIPE_OPTIONS = [0, 1, 2, 3, 4] as const;
 
 export function TechniqueForm({ mode, techniqueId }: TechniqueFormProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   // ── 로컬 폼 상태 (가짜 데이터 없이 빈/기본값으로 시작) ──
   const [name, setName] = useState('');
@@ -184,6 +186,8 @@ export function TechniqueForm({ mode, techniqueId }: TechniqueFormProps) {
           : await createTechnique(payload);
 
       if (res.ok) {
+        // 목록 쿼리(['techniques',*])를 무효화해 라이브러리가 새/수정 기술로 갱신되게 한다(navigation 전).
+        queryClient.invalidateQueries({ queryKey: ['techniques'] });
         toast.success('저장됨');
         if (mode === 'create') {
           router.push('/techniques');
