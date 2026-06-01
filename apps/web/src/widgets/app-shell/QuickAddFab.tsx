@@ -1,18 +1,21 @@
 'use client';
 
 import { PlusIcon } from '@/shared/ui';
+import { useSessionEditorStore } from '@/shared/model/session-editor-store';
 
 /**
  * QuickAddFab — 전역 빠른 추가 FAB (PRD §7 / Design §7a "오늘 세션 추가").
  *
  * 빨강 원형 버튼, 우하단 `fixed`. 모바일에선 BottomNav 위에 떠야 하므로
  * `bottom`을 탭바 높이 + safe-area만큼 띄운다(겹침 방지, §10.3).
- * onClick은 아직 동작 없음(인프라/세션 에디터 미구현) — 가짜 라우팅 금지.
+ * 클릭 시 shared 오버레이 스토어로 세션 에디터를 연다(presetDate 없음 → 호스트가 오늘로).
+ * FSD: widget→widget 금지라 session-editor가 아닌 shared 스토어를 직접 import 한다.
  */
 export function QuickAddFab() {
+  const open = useSessionEditorStore((s) => s.open);
+
   function handleClick() {
-    // TODO(F3): 세션 에디터(widgets/session-editor) 열기 — 모바일=바텀시트 / 웹=모달.
-    // 현재는 인프라/에디터 미구현이라 no-op. 가짜 페이지로 라우팅하지 않는다.
+    open({ mode: 'create' }); // presetDate 미지정 → 호스트가 오늘 날짜로 채움.
   }
 
   return (

@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from 'sonner';
 import { ThemeProvider } from '@/shared/ui/theme';
 
 /**
@@ -10,7 +11,8 @@ import { ThemeProvider } from '@/shared/ui/theme';
  * - QueryClientProvider: TanStack Query. 인스턴스를 useState로 1회 생성해
  *   리렌더/HMR 시 캐시 유지(서버 데이터는 Query가 단일 출처, §6b).
  * - ThemeProvider: 마운트 시 localStorage→스토어 hydrate(테마 UI 동기화).
- * - Toaster(sonner)는 아직 미도입 — F3에서 추가(task 제약). 여기 없음.
+ * - Toaster(sonner): F3에서 도입 — 세션 저장 결과(성공/도먼시 안내/오류) 토스트.
+ *   top-center · richColors(상태색) · closeButton.
  */
 export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
@@ -29,6 +31,7 @@ export function Providers({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>{children}</ThemeProvider>
+      <Toaster position="top-center" richColors closeButton />
     </QueryClientProvider>
   );
 }

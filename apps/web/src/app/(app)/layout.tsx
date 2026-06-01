@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { redirect } from 'next/navigation';
 
 import { AppShell } from '@/widgets/app-shell';
+import { SessionEditorHost } from '@/widgets/session-editor';
 import { createSupabaseServerClient } from '@/shared/api/supabase/server';
 import { isAuthEnabled } from '@/shared/api/supabase/env';
 
@@ -15,6 +16,10 @@ import { isAuthEnabled } from '@/shared/api/supabase/env';
  *    Supabase를 만지지 않으므로 (app) 라우트는 정적 프리렌더 가능(앱 셸 탐색 유지).
  *  - NEXT_PUBLIC_AUTH_ENABLED=true(인프라 후): getUser()로 세션 검증, 없으면 /login으로 redirect.
  *    이 시점부터 (app)은 동적 렌더가 된다(쿠키 접근).
+ *
+ * 세션 에디터 호스트(F3)는 AppShell 형제로 전역 1회 마운트한다 — 모든 (app) 라우트가
+ * 하나의 오버레이를 공유한다(진입점은 FAB/day-detail/calendar, 상태는 shared 스토어).
+ * 서버 레이아웃에서 클라이언트 컴포넌트(SessionEditorHost)를 렌더하는 것은 정상이다.
  */
 export default async function AppGroupLayout({ children }: { children: ReactNode }) {
   if (isAuthEnabled()) {
@@ -23,5 +28,10 @@ export default async function AppGroupLayout({ children }: { children: ReactNode
     if (!data.user) redirect('/login');
   }
 
-  return <AppShell>{children}</AppShell>;
+  return (
+    <>
+      <AppShell>{children}</AppShell>
+      <SessionEditorHost />
+    </>
+  );
 }

@@ -7,6 +7,7 @@ import { CalendarMonthGrid } from '@/features/calendar-view';
 import { DayDetail } from '@/widgets/day-detail';
 import type { CalendarDaySummaryMap, SessionWithDisciplines } from '@/entities/session';
 import { ChevronLeftIcon, IconButton, PlusIcon, TodayIcon } from '@/shared/ui';
+import { useSessionEditorStore } from '@/shared/model/session-editor-store';
 
 /**
  * CalendarScreen — F2 캘린더 홈 클라이언트 아일랜드 (Design §7a / §7b / §8 / PRD F2).
@@ -35,6 +36,9 @@ export function CalendarScreen() {
   const [activeStartDate, setActiveStartDate] = useState<Date>(() =>
     dayjs().startOf('month').toDate(),
   );
+
+  // 세션 에디터 오픈(F3) — shared 오버레이 스토어. 선택 날짜를 프리셋한다.
+  const openEditor = useSessionEditorStore((s) => s.open);
 
   // TODO(deep-link): useSearchParams()로 ?date=YYYY-MM-DD 초기값 수용(<Suspense> 경계 필요).
   //   지금은 빌드 정적 유지를 위해 기본 오늘로 두고 딥링크는 보류.
@@ -118,12 +122,16 @@ export function CalendarScreen() {
             </span>
           </div>
 
-          {/* TODO(F3): 세션 에디터 오픈. 지금은 비활성 스텁(전역 FAB가 1차 진입점). */}
+          {/* 세션 에디터 오픈(F3) — 선택 날짜 프리셋. 전역 FAB와 함께 진입점. */}
           <button
             type="button"
-            disabled
-            title="세션 에디터(F3) 예정"
-            className="inline-flex h-8 cursor-not-allowed items-center gap-1.5 rounded-xxs bg-[var(--surface-sunken)] px-2.5 text-button-s text-[var(--text-disabled)]"
+            onClick={() =>
+              openEditor({
+                mode: 'create',
+                presetDate: dayjs(selectedDate).format('YYYY-MM-DD'),
+              })
+            }
+            className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-xxs px-2.5 text-button-s text-[var(--text-default)] outline-none transition-colors duration-[var(--duration-fast)] ease-[var(--ease-standard)] pointer-hover:bg-[var(--surface-sunken)] focus-visible:shadow-[var(--ring-focus)]"
           >
             <PlusIcon width={16} height={16} />
             세션
